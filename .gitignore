@@ -1,0 +1,8 @@
+# files
+.pnml
+.DS_Store
+.pdf
+.gv
+
+# directories
+__pycache__/
