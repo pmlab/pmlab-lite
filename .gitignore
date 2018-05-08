@@ -1,8 +1,8 @@
 # files
-.pnml
+*.pnml
 .DS_Store
-.pdf
-.gv
+*.pdf
+*.gv
 
 # directories
 __pycache__/
