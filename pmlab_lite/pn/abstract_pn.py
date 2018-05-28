@@ -1,4 +1,6 @@
+# import sys
 from abc import ABC, abstractmethod
+# import pmlab_lite
 
 
 class AbstractPetriNet(ABC):
@@ -7,7 +9,9 @@ class AbstractPetriNet(ABC):
     given functions.
     """
 
-    def __init__(self):
+    def __init__(self, name):
+
+        super().__init__(name)
         self.places = []
         self.transitions = []
         self.edges = []
