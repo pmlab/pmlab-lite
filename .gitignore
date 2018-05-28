@@ -3,6 +3,8 @@
 .DS_Store
 *.pdf
 *.gv
+*.iml
+*.xml
 
 # directories
 __pycache__/
