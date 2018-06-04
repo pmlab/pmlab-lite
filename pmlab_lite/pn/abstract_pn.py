@@ -9,9 +9,7 @@ class AbstractPetriNet(ABC):
     given functions.
     """
 
-    def __init__(self, name):
-
-        super().__init__(name)
+    def __init__(self):
         self.places = []
         self.transitions = []
         self.edges = []
@@ -53,17 +51,17 @@ class AbstractPetriNet(ABC):
     def replay(self):
         pass
 
-    @abstractmethod
-    def draw(self):
-        pass
+    # @abstractmethod
+    # def draw(self):
+    #     pass
 
-    @abstractmethod
-    def from_pnml_file(self):
-        pass
+    # @abstractmethod
+    # def from_pnml_file(self):
+    #     pass
 
-    @abstractmethod
-    def export_pnml_file(self):
-        pass
+    # @abstractmethod
+    # def export_pnml_file(self):
+    #     pass
 
     @abstractmethod
     def from_ts_file(self):

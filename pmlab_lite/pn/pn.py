@@ -1,26 +1,9 @@
-import sys
-import xml.etree.ElementTree as xmltree
 from random import randint
-from graphviz import Digraph
-
-# from pmlab_lite.pn import PetriNetFilter
-# from pmlab_lite import Filter
 from .abstract_pn import AbstractPetriNet
 
-class Manipulable:
 
-	def __init__(self, name: str):
-		self.name = name
-
-	def __getattr__(self, attname):
-		class_ = getattr(sys.modules[__name__], attname)
-		return class_(self)
-
-class PetriNet(AbstractPetriNet, Manipulable):
+class PetriNet(AbstractPetriNet):
 	""" Class to represent a Petri Net."""
-
-	def __init__(self, name:str):
-		super().__init__(name)
 
 	def add_place(self, name, capacity=1):
 		"""
@@ -43,6 +26,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 		else:
 			raise TypeError('place identifier has to be numeric')
 
+		return self
+
 	def remove_place(self, name):
 		"""
 		Remove a place from the netself.
@@ -55,6 +40,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 				self.remove_all_edges_of(name)
 				del self.places[idx]
 				break
+
+		return self
 
 	def add_transition(self, name):
 		"""
@@ -75,6 +62,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 		else:
 			raise TypeError('transition identifier has to be a string')
 
+		return self
+
 	def remove_transition(self, name):
 		"""
 		Remove the given transition from the net.
@@ -87,6 +76,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 				self.remove_all_edges_of(name)
 				del self.transitions[idx]
 				break
+
+		return self
 
 	def add_edge(self, source, target, two_way=False):
 		"""
@@ -125,6 +116,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 			self.edges.append((source, target))
 			self.edges.append((target, source))
 
+		return self
+
 	def remove_edge(self, source, target):
 		"""Remove edge.
 
@@ -136,6 +129,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 			if edge[0] == source and edge[1] == target:
 				del self.edges[idx]
 				break
+
+		return self
 
 	def remove_all_edges_of(self, name):
 		"""
@@ -152,6 +147,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 		# where element is target
 		for e in list(filter(lambda x: x[1] == name, self.edges)):
 			del self.edges[self.edges.index(e)]
+
+		return self
 
 	def is_enabled(self, transition):
 		"""
@@ -195,6 +192,8 @@ class PetriNet(AbstractPetriNet, Manipulable):
 			self.marking[place] = token
 		else:
 			raise ValueError('place does not exist.')
+
+		return self
 
 	def replay(self):
 		"""Randomly replay the net starting from its current marking.
@@ -279,127 +278,6 @@ class PetriNet(AbstractPetriNet, Manipulable):
 			else:
 				self.marking[o] = 1
 
-	def draw(self, filename="petri_net", format="pdf"):
-		"""
-		This function transforms the given Petri net structure
-		into DOT notation and returns it as a digraph object. Call
-		the render() function to save it to file.
-
-		Args:
-			filename: string name of the file
-			format: export format
-
-		Retruns:
-			Digraph object
-		"""
-
-		dot = Digraph(name=filename, format=format)
-		dot.attr(rankdir='LR', fontsize="10", nodesep="0.35",
-				 ranksep="0.25 equally")
-
-		# draw transition
-		dot.attr('node', shape='box', penwidth="1", fontsize="10",
-				 fontname="Helvetica")
-
-		for t in self.transitions:
-			dot.node(t)
-
-		# draw place
-		dot.attr('node', shape='circle', style="filled",
-				 color='lightgrey', penwidth="1", fontsize="10",
-				 fontname="Helvetica")
-
-		for p in self.places:
-			dot.node(str(p[0]))
-
-		# draw edges
-		for e in self.edges:
-			dot.edge(str(e[0]), str(e[1]))
-
-		# dot.render()
-		return dot
-
-	def from_pnml_file(self, filename):
-		"""
-		Overwrite petri net structure by reading in a PNML file and
-		generate a new petri net structure.
-
-		Args:
-			filename: path to PNML file
-
-		Raises:
-			ValueError: invalid PNML format
-		"""
-		tree = xmltree.parse(filename)
-		ns = '{http://www.pnml.org/version-2009/grammar/pnml}'
-		root = tree.getroot()
-		net = root.find('%snet' % ns)
-
-		if net is None:
-			# Try non namespaced version
-			# "Be conservative in what you send, be liberal in what you accept"
-			net = root.find('net')
-			if net is None:
-				# Nothing to do
-				raise ValueError('invalid PNML format')
-			# Otherwise assume entire file is non-namespaced
-			ns = ''
-
-		id_map = {}
-
-		def has_name(element):
-			node = element.find('%sname/%stext' % (ns, ns))
-			return node is not None
-
-		def get_name_or_id(element):
-			node = element.find('%sname/%stext' % (ns, ns))
-			if node is not None:
-				return node.text
-			else:
-				return element.attrib['id']
-
-		def remove_suffix(s, suffix):
-			if s.endswith(suffix):
-				return s[:-len(suffix)]
-			else:
-				return s
-
-		# Recursively enumerate all nodes with tag = transition
-		# They might be distributed in several <page> child tags
-
-		for c in net.iterfind('.//%stransition' % ns):
-			xml_id = c.attrib['id']
-			name = remove_suffix(get_name_or_id(c), '+complete')
-
-			# If it has no name, it's probably a dummy transition
-			dummy = not has_name(c)
-
-			id_map[xml_id] = name
-			self.add_transition(name)
-
-		for c in net.iterfind('.//%splace' % ns):
-			xml_id = c.attrib['id']
-			name = get_name_or_id(c)
-
-			p = self.add_place(int(name))
-			id_map[xml_id] = name
-		"""
-			marking = c.find('%sinitialMarking/%stext' % (ns, ns))
-			if marking is not None:
-				pn.set_initial_marking(p,int(marking.text))
-		"""
-
-		for c in net.iterfind('.//%sarc' % ns):
-			s = id_map[c.attrib['source']]
-			t = id_map[c.attrib['target']]
-
-			if str.isnumeric(s):
-				s = int(s)
-
-			if str.isnumeric(t):
-				t = int(t)
-
-			self.add_edge(s, t)
 
 	def from_ts_file(self):
 		"""Create a petri net from a transition system."""
@@ -408,145 +286,3 @@ class PetriNet(AbstractPetriNet, Manipulable):
 	def to_ts_file(self):
 		"""Convert the petri net into a transition system."""
 		pass
-
-	def export_pnml_file(self, filename):
-		"""
-		Save the petri net in PNML format.
-
-		Args:
-			filename: file or filename in which the PN has to be written
-
-		"""
-
-		if ".pnml" not in filename:
-			filename = ".".join([filename, "pnml"])
-
-		def add_text(element, text):
-			xmltree.SubElement(
-				element, '{http://www.pnml.org/version-2009/grammar/pnml}text').text = text
-
-		def add_name(element, text):
-			add_text(xmltree.SubElement(
-				element, '{http://www.pnml.org/version-2009/grammar/pnml}name'), text)
-
-		xmltree.register_namespace("pnml", "http://www.pnml.org/version-2009/grammar/pnml")
-
-		root = xmltree.Element('{http://www.pnml.org/version-2009/grammar/pnml}pnml')
-		net = xmltree.SubElement(root, '{http://www.pnml.org/version-2009/grammar/pnml}net', {
-			'{http://www.pnml.org/version-2009/grammar/pnml}id': 'pmlabNet1',
-			'{http://www.pnml.org/version-2009/grammar/pnml}type': 'http://www.pnml.org/version-2009/grammar/pnmlcoremodel'
-		})
-
-		add_name(net, filename)
-		page = xmltree.SubElement(net, '{http://www.pnml.org/version-2009/grammar/pnml}page', {
-			'{http://www.pnml.org/version-2009/grammar/pnml}id': 'n0'
-		})
-
-		node_num = 1
-		id_map = {}
-
-		for p in self.places:
-			name = str(p[0])
-
-			xml_id = "p%d" % node_num
-			node = xmltree.SubElement(page, '{http://www.pnml.org/version-2009/grammar/pnml}place',
-									  {'{http://www.pnml.org/version-2009/grammar/pnml}id': xml_id})
-			add_name(node, name)
-
-			# tokens = self.vp_place_initial_marking[p]
-			# if tokens >= 1:
-			#     marking = xmltree.SubElement(node, '{http://www.pnml.org/version-2009/grammar/pnml}initialMarking')
-			#     add_text(marking, str(tokens))
-
-			id_map[p[0]] = xml_id
-			node_num += 1
-
-		for t in self.transitions:
-			assert t not in id_map
-			name = t
-			# if self.vp_transition_dummy[t]:
-			#     name = '' # empty label for dummies
-			xml_id = "t%d" % node_num
-			node = xmltree.SubElement(page, '{http://www.pnml.org/version-2009/grammar/pnml}transition',
-									  {'{http://www.pnml.org/version-2009/grammar/pnml}id': xml_id})
-			add_name(node, name)
-
-			id_map[t] = xml_id
-			node_num += 1
-
-		for e in self.edges:
-			xml_id = "arc%d" % node_num
-			node = xmltree.SubElement(page, '{http://www.pnml.org/version-2009/grammar/pnml}arc', {
-				'{http://www.pnml.org/version-2009/grammar/pnml}id': xml_id,
-				'{http://www.pnml.org/version-2009/grammar/pnml}source': id_map[e[0]],
-				'{http://www.pnml.org/version-2009/grammar/pnml}target': id_map[e[1]]
-			})
-			add_name(node, "%d" % 1)
-
-			node_num += 1
-
-		tree = xmltree.ElementTree(root)
-		tree.write(filename, encoding='UTF-8', xml_declaration=True,
-				   default_namespace='http://www.pnml.org/version-2009/grammar/pnml')
-
-class Filter:
-
-	def __call__(self, caller):
-		raise NotImplemented
-
-
-class PetriNetFilter(Filter):
-
-	def __init__(self, pn: PetriNet):
-			self.pn = pn
-
-
-class AddPlace(PetriNetFilter):
-
-	def __call__(self, place, capacity=1) -> PetriNet:
-		self.pn.add_place(place, capacity)
-		return self.pn
-
-
-class AddTransition(PetriNetFilter):
-
-	def __call__(self, transition) -> PetriNet:
-		self.pn.add_transition(transition)
-		return self.pn
-
-class AddEdge(PetriNetFilter):
-
-	def __call__(self, place, transition, two_way=False) -> PetriNet:
-		self.pn.add_edge(place, transition, two_way)
-		return self.pn
-
-class AddMarking(PetriNetFilter):
-
-	def __call__(self, place, token=1) -> PetriNet:
-		self.pn.add_marking(place, token)
-		return self.pn
-
-
-class RemovePlace(PetriNetFilter):
-
-	def __call__(self, place) -> PetriNet:
-		self.pn.remove_place(place)
-		return self.pn
-
-class RemoveTransition(PetriNetFilter):
-
-	def __call__(self, transition) -> PetriNet:
-		self.pn.remove_transition(transition)
-		return self.pn
-
-class RemoveEdge(PetriNetFilter):
-
-	def __call__(self, place, transition) -> PetriNet:
-		self.pn.remove_edge(place, transition)
-		return self.pn
-
-class LoadPNML(PetriNetFilter):
-
-	def __call__(self, file) -> PetriNet:
-		self.pn.from_pnml_file(file)
-		return self.pn
