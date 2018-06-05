@@ -279,10 +279,10 @@ class PetriNet(AbstractPetriNet):
 				self.marking[o] = 1
 
 
-	def from_ts_file(self):
-		"""Create a petri net from a transition system."""
-		pass
-
-	def to_ts_file(self):
-		"""Convert the petri net into a transition system."""
-		pass
+	# def from_ts_file(self):
+	# 	"""Create a petri net from a transition system."""
+	# 	pass
+	#
+	# def to_ts_file(self):
+	# 	"""Convert the petri net into a transition system."""
+	# 	pass

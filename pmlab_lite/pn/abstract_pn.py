@@ -52,21 +52,9 @@ class AbstractPetriNet(ABC):
         pass
 
     # @abstractmethod
-    # def draw(self):
+    # def from_ts_file(self):
     #     pass
-
+	#
     # @abstractmethod
-    # def from_pnml_file(self):
+    # def to_ts_file(self):
     #     pass
-
-    # @abstractmethod
-    # def export_pnml_file(self):
-    #     pass
-
-    @abstractmethod
-    def from_ts_file(self):
-        pass
-
-    @abstractmethod
-    def to_ts_file(self):
-        pass
