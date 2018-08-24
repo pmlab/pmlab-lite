@@ -1,5 +1,6 @@
 from random import randint
 from .abstract_pn import AbstractPetriNet
+import pprint
 
 
 class PetriNet(AbstractPetriNet):
@@ -286,3 +287,10 @@ class PetriNet(AbstractPetriNet):
 	# def to_ts_file(self):
 	# 	"""Convert the petri net into a transition system."""
 	# 	pass
+
+	def __repr__(self):
+		desc = "Transitions: %s \n" \
+			   "Places: %s \n" \
+			   "Edges: %s" %(self.transitions, self.places, self.edges)
+
+		return desc
