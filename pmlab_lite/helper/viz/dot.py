@@ -1,6 +1,6 @@
 from graphviz import Digraph
 
-from pmlab_lite.graph import Graph
+from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
 
 
