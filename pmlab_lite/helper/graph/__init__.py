@@ -4,6 +4,8 @@ like direct follower graphs
 """
 from collections import defaultdict
 
+# from pmlab.pn import PetriNet
+
 
 class Graph:
 
@@ -41,3 +43,10 @@ class Graph:
 	def from_seq(self, seq):
 		for idx, i in enumerate(seq[:-1]):
 			self.add_edge(i, seq[idx + 1])
+
+	def from_petrinet(self, pn):
+		l1 = list(filter(lambda x: not isinstance(x[0], int), pn.edges))
+		for l in l1:
+			for e in pn.edges:
+				if l[1] == e[0]:
+					self.add_edge(l[0], e[1])
