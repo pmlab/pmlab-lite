@@ -5,6 +5,7 @@ import scipy as sc
 import Queue
 import copy
 
+#Priority Queue to store state nodes
 q=Queue.PriorityQueue()
 
 class Node:
@@ -25,7 +26,6 @@ class Node:
         for i in range(0, incidence_matrix.shape[1]):
             if( numpy.all(incidence_matrix[:,i]+self.marking_vector>=0) ) :
                 if(i not in self.active_transition):
-                    print "iiiiiiiiiiiiiiiii:",i
                     self.active_transition.append(i)
 
 
@@ -35,9 +35,17 @@ class Node:
 
     #This function calls other functions to investigate the current node
     def Investigate(self,incidence_matrix, trans, places, final_marking, distance_matrix, vertices):
-        print "Investigation is started---------------------------------------------"
-        print "The cost of that node is:", self.total_cost
-        print "The current mariking of the node:", self.marking_vector
+        '''
+
+        :param incidence_matrix: Incidence matrix of the Petri net (numpy index)
+        :param trans: A list of transitions of the model
+        :param places: A list of places of the model
+        :param final_marking: Final marking of the model, like "p8'
+        :param distance_matrix: Distance matrix computed from Floyed algorithm
+        :param vertices: Names of vertices of the distance matrix
+        :return:
+        '''
+        
         #Finding active transitions
         self.Find_active_transition(incidence_matrix)
 
@@ -48,9 +56,6 @@ class Node:
             self.cost_to_final_marking=d
 
             #This is a synchronous move
-            print "trans:", trans
-            print "trans[i]:", trans[i], "   , self.observed_trace_remain[0]:", self.observed_trace_remain
-            print ""
             try:
                 if(trans[i]== self.observed_trace_remain[0]):
                     print "We are in synchronous move"
@@ -67,18 +72,13 @@ class Node:
                     node_child.alignment_Up_to=self.alignment_Up_to + [(self.observed_trace_remain[0], trans[i])]
                     node_child.cost_to_final_marking=d
                     node_child.cost_from_init_marking = sum([0 if ( (x[0] != '-')  and  (x[1] != '-') )  else 100 for x in node_child.alignment_Up_to])/ float(len(node_child.alignment_Up_to))
-                    print "Alignment in synchronous:", node_child.alignment_Up_to
-                    print "Marking for that node:", node_child.marking_vector
+                    
 
                     # Updating active transitions for the child node
                     node_child.active_transition = copy.deepcopy(self.active_transition)
-                    print "node.active before removing:", node_child.active_transition
                     node_child.active_transition.remove(i)
                     node_child.total_cost = node_child.cost_to_final_marking+ node_child.cost_from_init_marking
-                    print "node.active after removing:", node_child.active_transition
-                    print "node_child.cost_to_final_marking=d:", node_child.cost_to_final_marking
-                    print "cost_from_init_marking:", node_child.cost_from_init_marking
-                    print "The cost of generated node is (total):", node_child.total_cost
+                    
 
                     #Putting the node in the priority queue
                     q.put((node_child.total_cost, node_child))
@@ -100,28 +100,20 @@ class Node:
                     node_child.alignment_Up_to=self.alignment_Up_to + [('-',trans[i])]
                     node_child.cost_to_final_marking = d
                     node_child.cost_from_init_marking = sum([0 if ( (x[0] != '-')  and  (x[1] != '-') )  else 100 for x in node_child.alignment_Up_to])/ float(len(node_child.alignment_Up_to))
-                    print "Alignment in asynchronous:", node_child.alignment_Up_to
-                    print "Marking for that node:", node_child.marking_vector
+                    
 
                     # Updating active transitions for the child node
                     node_child.active_transition = copy.deepcopy(self.active_transition)
-                    print "node.active before removing:", node_child.active_transition
                     node_child.active_transition.remove(i)
-                    print "node.active after removing:", node_child.active_transition
-
                     node_child.total_cost = node_child.cost_to_final_marking + node_child.cost_from_init_marking
-                    print "node.active after removing:", node_child.active_transition
-                    print "node_child.cost_to_final_marking=d:", node_child.cost_to_final_marking
-                    print "cost_from_init_marking:", node_child.cost_from_init_marking
-                    print "The cost of generated node is (total):", node_child.total_cost
+                    
 
                     # Putting the node in the priority queue
                     q.put((node_child.total_cost, node_child))
 
                     #-----------------------------------------------------------
                     #Here we can have move in log as well!
-                    print "\n"
-                    print "Creating a node for move in log"
+                    print "We are in asynchronous move in log"
                     # Creating a new node
                     node_child = Node()
                     # Updating the current marking for that node
@@ -133,19 +125,13 @@ class Node:
                     node_child.alignment_Up_to = self.alignment_Up_to + [(self.observed_trace_remain[0], '-')]
                     node_child.cost_to_final_marking = self.cost_to_final_marking
                     node_child.cost_from_init_marking = sum([0 if ( (x[0] != '-')  and  (x[1] != '-') )  else 100 for x in node_child.alignment_Up_to])/ float(len(node_child.alignment_Up_to))
-                    print "Alignment in asynchronous:", node_child.alignment_Up_to
-                    print "Marking for that node:", node_child.marking_vector
+                    p
 
                     # Updating active transitions for the child node
                     node_child.active_transition = copy.deepcopy(self.active_transition)
-                    print "node.active:", node_child.active_transition
-
+                    
                     node_child.total_cost = node_child.cost_to_final_marking + node_child.cost_from_init_marking
-                    print "node.active after removing:", node_child.active_transition
-                    print "node_child.cost_to_final_marking=d:", node_child.cost_to_final_marking
-                    print "cost_from_init_marking:", node_child.cost_from_init_marking
-                    print "The cost of generated node is (total):", node_child.total_cost
-
+                    
 
                     # Putting the node in the priority queue
                     q.put((node_child.total_cost, node_child))
@@ -164,20 +150,12 @@ class Node:
                 node_child.alignment_Up_to = self.alignment_Up_to + [('-', trans[i])]
                 node_child.cost_to_final_marking = d
                 node_child.cost_from_init_marking = sum([0 if ( (x[0] != '-')  and  (x[1] != '-') )  else 100 for x in node_child.alignment_Up_to])/ float(len(node_child.alignment_Up_to))
-                print "Alignment in asynchronous:", node_child.alignment_Up_to
-                print "Marking for that node:", node_child.marking_vector
-
+                
                 # Updating active transitions for the child node
                 node_child.active_transition = copy.deepcopy(self.active_transition)
-                print "node.active before removing:", node_child.active_transition
                 node_child.active_transition.remove(i)
-                print "node.active after removing:", node_child.active_transition
-
+                
                 node_child.total_cost = node_child.cost_to_final_marking + node_child.cost_from_init_marking
-                print "node.active after removing:", node_child.active_transition
-                print "node_child.cost_to_final_marking=d:", node_child.cost_to_final_marking
-                print "cost_from_init_marking:", node_child.cost_from_init_marking
-                print "The cost of generated node is (total):", node_child.total_cost
 
                 # Putting the node in the priority queue
                 q.put((node_child.total_cost, node_child))
@@ -185,31 +163,17 @@ class Node:
 
 
 
-        print "Investigation is finished---------------------------------------------"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#class Alignment:
 
 #######################################################################
 # This is Floyd() algorithm for computing the distance of a node to the final marking  as a heuristic
 def Floyd_with_Labels(inc_matrix, places, transitions):
-
-    # inc_matrix = V.Inc_matrix
-    # places = V.p_name[:]
-    # transitions = V.transition[:]
+    '''
+    :param inc_matrix: Incidence matrix of the model (numpy)
+    :param places: A list containing places
+    :param transitions: A list containing transitions
+    :return: A distance_matrix and nemaes of rows and colomns
+    '''
+    
 
     # storing all vertices in a list
     # vert is like= ['P_p1', 'P_p3','P_p4',....,'T_t4','T_t5','T_t6',]
@@ -251,13 +215,6 @@ def Floyd_with_Labels(inc_matrix, places, transitions):
 
     del ind
 
-    # Creating distance matrix using Floyd algorithm
-    '''distance_matrix=copy.deepcopy(matrix)
-
-    for k in range(len(vertices)):
-        for i in range(len(vertices)):
-            for j in range(len(vertices)):
-                distance_matrix[i][j]=min( distance_matrix[i][j], distance_matrix[i][k]+distance_matrix[k][j])'''
 
     # Using scipy library to compute distance matrix
     distance_matrix = sc.sparse.csgraph.floyd_warshall(matrix, directed=True)
@@ -269,19 +226,18 @@ def Floyd_with_Labels(inc_matrix, places, transitions):
 
 #A-star algorithm
 def Astar(model_path, log_path, destination_path, final_marking=['end']):
-    '''
-    :param model: A process model file represented in PNML
-    :param log: Event log in XES format
-    :return: A set of alignments
+     '''
+
+    :param model_path: Address to the PNML file
+    :param log_path:  Address to the log file
+    :param destination_path: Destination address to write some files
+    :param final_marking: Final marking of the Petri net, like 'p8'
+    :return:
     '''
 
     #Reading the model
     trans, places, Incident_matrix , initial_place_marking=WR.Preprocess(model_path, destination_path)
-    print("the transitions are:", trans)
-    print("the places are:", places)
-    print("the initial marking is:", initial_place_marking)
-    print("the final marking is:", final_marking)
-    print ("The incidence mztrix is:", Incident_matrix)
+    
 
     ###---------------------------------------------------------------------------------------------------
     # This part is only to read a single trace from a txt file, just for testing. Otherwise remove this part
@@ -298,15 +254,13 @@ def Astar(model_path, log_path, destination_path, final_marking=['end']):
 
     #Creating initial marking vector
     init_mark_vector=list(numpy.repeat(0,len(places)))
-    #init_mark_vector = numpy.zeros((len(places), 1), dtype=numpy.int)
     init_mark_vector[places.index(initial_place_marking)]=1
-    print "The initial marking vector is:", init_mark_vector
+    
 
     #Creating Final marking vector
-    #final_mark_vector = numpy.zeros((len(places), 1), dtype=numpy.int)
     final_mark_vector = list(numpy.repeat(0,len(places)))
     final_mark_vector[places.index(final_marking)] = 1
-    print("The final marking vector is:", final_mark_vector)
+    
 
 
 
@@ -318,11 +272,10 @@ def Astar(model_path, log_path, destination_path, final_marking=['end']):
     #Creating initial node in the search space
     current_node=Node()
     current_node.marking_vector=init_mark_vector[:]
-    print "currentttttttttttt", current_node.marking_vector
     current_node.observed_trace_remain=total_trace[0]
 
 
-    #while(( not numpy.all(current_node.marking_vector ==final_mark_vector)  or  len(current_node.observed_trace_remain)!=0 ) ):
+   
     explore=1
     candidate_nodes=[]
     while ( explore):
@@ -336,15 +289,6 @@ def Astar(model_path, log_path, destination_path, final_marking=['end']):
             candidate_nodes.append(current_node)
             if(len(candidate_nodes)>5):
                 explore=0
-
-        #q.put((current_node.total_cost, current_node))
-        # print "Alignment for the object after pop", current_node.alignment_Up_to
-        # print "Remaining observed trace:", current_node.observed_trace_remain
-        # print "Marking of the current node:", current_node.marking_vector
-        print "--------------------------------------------------------------"
-
-
-
 
 
     return trans, places, Incident_matrix , initial_place_marking, init_mark_vector, candidate_nodes, total_trace, distance_matrix, vertices
