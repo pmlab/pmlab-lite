@@ -291,4 +291,6 @@ def Astar(model_path, log_path, destination_path, final_marking=['end']):
                 explore=0
 
 
-    return trans, places, Incident_matrix , initial_place_marking, init_mark_vector, candidate_nodes, total_trace, distance_matrix, vertices
+    #return trans, places, Incident_matrix , initial_place_marking, init_mark_vector, candidate_nodes, total_trace, distance_matrix, vertices
+
+    return  candidate_nodes
