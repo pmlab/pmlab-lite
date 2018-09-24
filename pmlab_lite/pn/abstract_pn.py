@@ -50,11 +50,3 @@ class AbstractPetriNet(ABC):
     @abstractmethod
     def replay(self):
         pass
-
-    # @abstractmethod
-    # def from_ts_file(self):
-    #     pass
-	#
-    # @abstractmethod
-    # def to_ts_file(self):
-    #     pass
