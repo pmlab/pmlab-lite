@@ -19,13 +19,13 @@ class PetriNet(AbstractPetriNet):
 			ValueError: place identifier has to be unique
 			TypeError: place identifier has to be numeric
 		"""
-		if isinstance(name, int):
+		if isinstance(name, int) and name > 0:
 			if not self.place_exists(name):
 				self.places.append((name, capacity))
 			else:
 				raise ValueError('place identifier has to be unique')
 		else:
-			raise TypeError('place identifier has to be numeric')
+			raise TypeError('place identifier has to be numeric and > 0')
 
 		return self
 
@@ -44,6 +44,9 @@ class PetriNet(AbstractPetriNet):
 
 		return self
 
+	def get_mapping(self):
+		return self.transitions
+
 	def add_transition(self, name):
 		"""
 		Add a transition to the net. The name has to be a string.
@@ -55,13 +58,17 @@ class PetriNet(AbstractPetriNet):
 			ValueError: place identifier has to be unique
 			TypeError: place identifier has to be a string
 		"""
-		if isinstance(name, str):
-			if not self.transition_exists(name):
-				self.transitions.append(name)
-			else:
-				raise ValueError('transition identifier has to be unique')
+
+		self.counter -= 1
+
+		if len(name) == 0:
+			name = 'tau'
+
+		if name in self.transitions.keys():
+			self.transitions[name].append(self.counter)
 		else:
-			raise TypeError('transition identifier has to be a string')
+			self.transitions[name] = [self.counter]
+
 
 		return self
 
@@ -72,12 +79,21 @@ class PetriNet(AbstractPetriNet):
 		Args:
 			name: string of the transition
 		"""
+
+
+		for key, values in self.transitions.items():
+			if name in values:
+				values.remove(name)
+				if len(values) == 0:
+					self.transitions.pop(key, None)
+				break
+		"""
 		for idx, transition in enumerate(self.transitions):
 			if transition == name:
 				self.remove_all_edges_of(name)
 				del self.transitions[idx]
 				break
-
+		"""
 		return self
 
 	def add_edge(self, source, target, two_way=False):
@@ -93,7 +109,12 @@ class PetriNet(AbstractPetriNet):
 		Raises:
 			ValueError: source/target does not exists
 		"""
-		if isinstance(source, int):
+		if source > 0 and target > 0 or  source < 0 and target < 0:
+			raise ValueError('edges can only be added between places and '
+							 'transition and vice versa')
+
+
+		if source > 0:
 			# source is place
 			if not self.place_exists(source):
 				raise ValueError('place does not exist')
@@ -102,7 +123,7 @@ class PetriNet(AbstractPetriNet):
 			if not self.transition_exists(source):
 				raise ValueError('transition does not exist')
 
-		if isinstance(target, int):
+		if target > 0:
 			# target is place
 			if not self.place_exists(target):
 				raise ValueError('place does not exist')
@@ -222,7 +243,11 @@ class PetriNet(AbstractPetriNet):
 		Returns:
 			True if transition exists in petri net, False otherwise.
 		"""
-		return name in self.transitions
+
+		# flatten list
+		transition_mapping = [item for sublist in self.transitions.values() for item
+							  in sublist]
+		return name in transition_mapping
 
 	def place_exists(self, name):
 		"""
@@ -246,8 +271,10 @@ class PetriNet(AbstractPetriNet):
 		Retruns:
 			List of all enabled transitions.
 		"""
-		return list(filter(lambda x: self.is_enabled(x),
-						   self.transitions))
+		transitions = [item for sublist in self.transitions.values() for item
+							  in sublist]
+
+		return list(filter(lambda x: self.is_enabled(x), transitions))
 
 	def fire_transition(self, transition):
 		"""
