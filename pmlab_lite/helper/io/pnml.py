@@ -159,24 +159,9 @@ def load(input_net: AbstractPetriNet, filename):
 
 			p = input_net.add_place(place_counter)
 			id_map[xml_id] = place_counter
-	"""
-		marking = c.find('%sinitialMarking/%stext' % (ns, ns))
-		if marking is not None:
-			pn.set_initial_marking(p,int(marking.text))
-	"""
-
-	print(id_map)
 
 	for c in net.iterfind('.//%sarc' % ns):
 		s = id_map[c.attrib['source']]
 		t = id_map[c.attrib['target']]
-
-		print(s, t)
-
-		#if str.isnumeric(s):
-		#	s = int(s)
-
-		#if str.isnumeric(t):
-		#	t = int(t)
 
 		input_net.add_edge(int(s), int(t))
