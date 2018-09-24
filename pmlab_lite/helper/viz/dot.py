@@ -32,13 +32,14 @@ def draw_petri_net(input_net:AbstractPetriNet, filename="petri_net",
 			for t in values:
 				dot.node(str(t), key)
 
-	# draw tau transistions
-	dot.attr('node', shape='square', style="filled",
-			 color='black', penwidth="1", fontsize="5",
-			 fontname="Helvetica")
+	if 'tau' in input_net.transitions.keys():
+		# draw tau transistions
+		dot.attr('node', shape='square', style="filled",
+				 color='black', penwidth="1", fontsize="5",
+				 fontname="Helvetica")
 
-	for t in input_net.transitions['tau']:
-		dot.node(str(t))
+		for t in input_net.transitions['tau']:
+			dot.node(str(t))
 
 	# draw place
 	dot.attr('node', shape='circle', style="filled",

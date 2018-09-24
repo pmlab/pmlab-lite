@@ -47,7 +47,7 @@ class PetriNet(AbstractPetriNet):
 	def get_mapping(self):
 		return self.transitions
 
-	def add_transition(self, name):
+	def add_transition(self, name, id = None):
 		"""
 		Add a transition to the net. The name has to be a string.
 
@@ -59,15 +59,22 @@ class PetriNet(AbstractPetriNet):
 			TypeError: place identifier has to be a string
 		"""
 
+
 		self.counter -= 1
 
 		if len(name) == 0:
 			name = 'tau'
 
-		if name in self.transitions.keys():
-			self.transitions[name].append(self.counter)
+		if id is None:
+			id = self.counter
 		else:
-			self.transitions[name] = [self.counter]
+			if id >= 0:
+				raise ValueError('transition identifier has to be < 0')
+
+		if name in self.transitions.keys():
+			self.transitions[name].append(id)
+		else:
+			self.transitions[name] = [id]
 
 
 		return self
