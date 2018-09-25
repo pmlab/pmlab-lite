@@ -152,7 +152,6 @@ def load(input_net: AbstractPetriNet, filename):
 
 	for c in net.iterfind('.//%splace' % ns):
 		place_counter += 1
-		print(c.attrib)
 		if 'id' in c.attrib.keys(): # else marking
 			xml_id = c.attrib['id']
 			name = get_name_or_id(c)

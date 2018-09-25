@@ -46,8 +46,8 @@ def draw_petri_net(input_net:AbstractPetriNet, filename="petri_net",
 			 color='lightgrey', penwidth="1", fontsize="10",
 			 fontname="Helvetica")
 
-	for p in input_net.places:
-		dot.node(str(p[0]))
+	for p in list(input_net.places.values()):
+		dot.node(str(p))
 
 	# draw edges
 	for e in input_net.edges:

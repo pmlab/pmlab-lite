@@ -1,129 +1,172 @@
 import unittest
-import pmlab_lite.pn as pn
+from pmlab_lite.pn import PetriNet
 
 
 class TestPetriNetMethods(unittest.TestCase):
 
-	def test_add_place_df_pn(self):
-		dpn = pn.PetriNet()
-		dpn.add_place(1)
-		dpn.add_place(2)
+	def test_is_enabled(self):
+		net = PetriNet()
+		net.add_transition('A')
+		net.add_place(1).add_place(2).add_place(3)
+		net.add_edge(1, -1).add_edge(-1, 3).add_edge(2, -1)
 
-		self.assertEqual(dpn.places,
-						 [(1, 1), (2, 1)])
+		# ----------------------------------
+		self.assertFalse(net.is_enabled(-1))
+
+		net.add_marking(1)
+		self.assertFalse(net.is_enabled(-1))
+
+		net.add_marking(2)
+		self.assertTrue(net.is_enabled(-1))
+
+	def test_all_enabled_transitions(self):
+		net = PetriNet()
+		net.add_transition('A').add_transition('B')
+		net.add_place(1).add_place(2).add_place(3).add_place(4)
+		net.add_edge(1, -1).add_edge(-1, 3).add_edge(2, -1)\
+			.add_edge(3, -2).add_edge(-2, 4)
+
+		# ----------------------------------
+		net.add_marking(1).add_marking(2)
+
+		transitions = net.all_enabled_transitions()
+		self.assertListEqual(transitions, [-1])
+
+
+	def test_fire_transition(self):
+		net = PetriNet()
+		net.add_transition('A').add_transition('B')
+		net.add_place(1).add_place(2).add_place(3).add_place(4)
+		net.add_edge(1, -1).add_edge(-1, 3).add_edge(2, -1) \
+			.add_edge(3, -2).add_edge(-2, 4)
+
+		net.add_marking(1).add_marking(2)
+
+		# ----------------------------------
+		net.fire_transition(-1)
+		transitions = net.all_enabled_transitions()
+		self.assertListEqual(transitions, [-2])
+
+
+	def test_add_place_df_pn(self):
+		dpn = PetriNet()
+		dpn.add_place(1)
+		dpn.add_place(2, 3)
+
+		# ----------------------------------
+		self.assertDictEqual(dpn.places, {0: 1, 1: 2})
+		self.assertListEqual(dpn.marking, [0, 0])
+		self.assertListEqual(dpn.capacity, [1, 3])
+
+
 
 	def test_remove_place_df_pn(self):
-		dpn = pn.PetriNet()
-		dpn.add_place(1, 1)
-		dpn.add_place(2, 1)
-		dpn.add_place(3, 1)
+		dpn = PetriNet()
+		dpn.add_place(1)
+		dpn.add_place(2)
+		dpn.add_place(3)
 
+
+		dpn.add_marking(3)
+
+		# ----------------------------------
 		dpn.remove_place(2)
+		self.assertDictEqual(dpn.places, {0: 1, 1: 3})
+		self.assertListEqual(dpn.marking, [0, 1])
+		self.assertListEqual(dpn.capacity, [1, 1])
 
-		self.assertEqual(dpn.places,
-						 [(1, 1), (3, 1)])
+		dpn.remove_place(3)
+		self.assertDictEqual(dpn.places, {0: 1})
+		self.assertListEqual(dpn.marking, [0])
+		self.assertListEqual(dpn.capacity, [1])
+
 
 	def test_add_transition_df_pn(self):
-		dpn = pn.PetriNet()
+		dpn = PetriNet()
 		dpn.add_transition('A')
 		dpn.add_transition('B')
+		dpn.add_transition('A')
 
-		self.assertEqual(dpn.transitions,
-						 ['A', 'B'])
+		self.assertDictEqual(dpn.transitions, {'A': [-1, -3], 'B': [-2]})
+
 
 	def test_remove_transition_df_pn(self):
-		dpn = pn.PetriNet()
+		dpn = PetriNet()
 		dpn.add_transition('A')
 		dpn.add_transition('B')
 		dpn.add_transition('C')
+		dpn.add_transition('A')
 
-		dpn.remove_transition('B')
+		# ----------------------------------
+		dpn.remove_transition(-2)
+		dpn.remove_transition(-1)
 
-		self.assertEqual(dpn.transitions,
-						 ['A', 'C'])
+		self.assertDictEqual(dpn.transitions, {'A': [-4], 'C': [-3]})
+
 
 	def test_add_edge_df_pn(self):
-		dpn = pn.PetriNet()
+		dpn = PetriNet()
 		dpn.add_transition('A')
 
 		dpn.add_place(1)
 		dpn.add_place(2)
 
-		dpn.add_edge(1, 'A', True)
+		# ----------------------------------
+		dpn.add_edge(1, -1, True)
 
 		self.assertEqual(dpn.edges,
-						 [(1, 'A'), ('A', 1)])
+						 [(1, -1), (-1, 1)])
+
 
 	def test_remove_edge_df_pn(self):
-		dpn = pn.PetriNet()
+		dpn = PetriNet()
 		dpn.add_transition('A')
 
 		dpn.add_place(1)
 		dpn.add_place(2)
 
-		dpn.add_edge(1, 'A', True)
-		dpn.add_edge('A', 2)
+		dpn.add_edge(1, -1, True)
+		dpn.add_edge(-1, 2)
 
-		dpn.remove_edge('A', 1)
+		# ----------------------------------
+		dpn.remove_edge(-1, 1)
 
-		self.assertEqual(dpn.edges,
-						 [(1, 'A'), ('A', 2)])
+		self.assertEqual(dpn.edges, [(1, -1), (-1, 2)])
+
 
 	def test_remove_all_edges_of_df_pn(self):
-		dpn = pn.PetriNet()
+		dpn = PetriNet()
 		dpn.add_transition('A')
 		dpn.add_transition('B')
 
 		dpn.add_place(1)
 		dpn.add_place(2)
 
-		dpn.add_edge(1, 'A', True)
-		dpn.add_edge('A', 2)
-		dpn.add_edge(1, 'B')
+		dpn.add_edge(1, -1, True)
+		dpn.add_edge(-1, 2)
+		dpn.add_edge(1, -2)
 
-		dpn.remove_all_edges_of('A')
+		# ----------------------------------
+		dpn.remove_all_edges_of(-1)
 
-		self.assertEqual(dpn.edges,
-						 [(1, 'B')])
+		self.assertEqual(dpn.edges, [(1, -2)])
+
 
 	def test_add_marking_df_pn(self):
-		dpn = pn.PetriNet()
-		dpn.add_transition('A')
-		dpn.add_transition('B')
+		dpn = PetriNet()
 
 		dpn.add_place(1)
 		dpn.add_place(2)
+		dpn.add_place(3)
 
-		dpn.add_edge(1, 'A', True)
-		dpn.add_edge('A', 2)
-		dpn.add_edge(1, 'B')
+		# ----------------------------------
+		dpn.add_marking(3)
 
-		dpn.add_marking(1)
-		dpn.add_marking(2, 3)
+		self.assertListEqual(dpn.marking, [0, 0, 1])
 
-		self.assertEqual(dpn.marking,
-						 {1: 1, 2: 3})
-
-	def test_is_enabled(self):
-		dpn = pn.PetriNet()
-		dpn.add_transition('A')
-		dpn.add_transition('B')
-
-		dpn.add_place(1)
-		dpn.add_place(2)
-
-		dpn.add_edge(1, 'A', True)
-		# dpn.add_edge(2, 'A')
-		dpn.add_edge('A', 2)
-		dpn.add_edge(1, 'B')
-
-		dpn.add_marking(1)
-		dpn.add_marking(2)
-
-		self.assertTrue(dpn.is_enabled('A'))
 
 	def test_replay_df_pn(self):
-		dpn = pn.PetriNet()
+		dpn = PetriNet()
 		dpn.add_transition('A')
 		dpn.add_transition('B')
 		dpn.add_transition('C')
@@ -132,47 +175,47 @@ class TestPetriNetMethods(unittest.TestCase):
 		dpn.add_place(2)
 		dpn.add_place(3)
 
-		dpn.add_edge(1, 'A')
-		dpn.add_edge('A', 2)
+		dpn.add_edge(1, -1)
+		dpn.add_edge(-1, 2)
 
-		dpn.add_edge(1, 'C')
-		dpn.add_edge('C', 3)
+		dpn.add_edge(1, -3)
+		dpn.add_edge(-3, 3)
 
-		# dpn.add_edge(1, 'B')  # deadlock
-		dpn.add_edge(2, 'B')
-		# dpn.add_edge(3, 'B')
-		dpn.add_edge('B', 3)
+		# dpn.add_edge(1, -2)  # deadlock
+		dpn.add_edge(2, -2)
+		# dpn.add_edge(3, -2)
+		dpn.add_edge(-2, 3)
 
-		dpn.add_marking(1, 1)
+		dpn.add_marking(1)
 		# dpn.add_marking(2, 2)
 		# dpn.add_marking(3, 2)
 
 		# start replay
 		dpn.replay()
-		self.assertEqual(dpn.marking,
-						 {3: 1})
+		self.assertListEqual(dpn.marking, [0, 0, 1])
 
 	# dpn.fire_transition('B')
 
 	def test_chain_operations_df_pn(self):
-		dpn = pn.PetriNet()
+		dpn = PetriNet()
 
 		dpn.add_place(1) \
 			.add_place(2) \
 			.add_place(3) \
 			.add_transition('A') \
 			.add_transition('B') \
-			.add_edge(1, 'A') \
-			.add_edge('A', 2) \
-			.add_edge(1, 'B') \
-			.add_edge('B', 2) \
+			.add_edge(1, -1) \
+			.add_edge(-1, 2) \
+			.add_edge(1, -2) \
+			.add_edge(-2, 2) \
 			.add_transition('C') \
+			.add_transition('A') \
 			.add_marking(1, 2) \
 			.remove_place(3) \
-			.add_edge(1, 'C') \
-			.remove_edge(1, 'C') \
-			.remove_transition('C')
+			.add_edge(1, -3) \
+			.remove_edge(1, -3) \
+			.remove_transition(-3)
 
-		self.assertEqual(dpn.places, [(1, 1), (2, 1)])
-		self.assertEqual(dpn.transitions, ['A'])
-		self.assertEqual(dpn.marking, {1: 2})
+		self.assertDictEqual(dpn.places, {0: 1, 1:2})
+		self.assertDictEqual(dpn.transitions, {'A': [-1, -4], 'B': [-2]})
+		self.assertListEqual(dpn.marking, [2, 0])

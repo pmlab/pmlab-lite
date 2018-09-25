@@ -10,10 +10,11 @@ class AbstractPetriNet(ABC):
     """
 
     def __init__(self):
-        self.places = []
+        self.places = {}
         self.transitions = {}
         self.edges = []
-        self.marking = {}
+        self.marking = []
+        self.capacity = []
         self.counter = 0 # mapping
 
     @abstractmethod
