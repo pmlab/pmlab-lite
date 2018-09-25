@@ -1,6 +1,7 @@
 from pmlab_lite.pn import AbstractPetriNet
 import xml.etree.ElementTree as xmltree
 
+
 def export(input_net: AbstractPetriNet, filename):
 	"""
 	Save the petri net in PNML format.
@@ -23,19 +24,20 @@ def export(input_net: AbstractPetriNet, filename):
 		add_text(xmltree.SubElement(
 			element, ''.join([baseURL, 'name'])), text)
 
-	xmltree.register_namespace("pnml", "http://www.pnml.org/version-2009/grammar/pnml")
+	xmltree.register_namespace("pnml",
+							   "http://www.pnml.org/version-2009/grammar/pnml")
 
 	root = xmltree.Element(''.join([baseURL, 'pnml']))
 	net = xmltree.SubElement(root, ''.join([baseURL, 'net']), {
 		''.join([baseURL, 'id']): 'pmlabNet1',
 		''.join([baseURL, 'type']): 'http://www.pnml.org/version-2009/grammar'
-								 '/pnmlcoremodel'
-	})
+									'/pnmlcoremodel'
+		})
 
 	add_name(net, filename)
 	page = xmltree.SubElement(net, ''.join([baseURL, 'page']), {
 		''.join([baseURL, 'id']): 'n0'
-	})
+		})
 
 	node_num = 1
 	id_map = {}
@@ -50,12 +52,12 @@ def export(input_net: AbstractPetriNet, filename):
 
 		# tokens = self.vp_place_initial_marking[p]
 		# if tokens >= 1:
-		#     marking = xmltree.SubElement(node, '{http://www.pnml.org/version-2009/grammar/pnml}initialMarking')
+		#     marking = xmltree.SubElement(node,
+		# '{http://www.pnml.org/version-2009/grammar/pnml}initialMarking')
 		#     add_text(marking, str(tokens))
 
 		id_map[p[0]] = xml_id
 		node_num += 1
-
 
 	for name, ids in input_net.transitions.items():
 		for id in ids:
@@ -69,21 +71,21 @@ def export(input_net: AbstractPetriNet, filename):
 			id_map[id] = xml_id
 			node_num += 1
 
-
 	for e in input_net.edges:
 		xml_id = "arc%d" % node_num
 		node = xmltree.SubElement(page, ''.join([baseURL, 'arc']), {
 			''.join([baseURL, 'id']): xml_id,
 			''.join([baseURL, 'source']): id_map[e[0]],
 			''.join([baseURL, 'target']): id_map[e[1]]
-		})
+			})
 		add_name(node, "%d" % 1)
 
 		node_num += 1
 
 	tree = xmltree.ElementTree(root)
 	tree.write(filename, encoding='UTF-8', xml_declaration=True,
-			   default_namespace='http://www.pnml.org/version-2009/grammar/pnml')
+			   default_namespace='http://www.pnml.org/version-2009/grammar'
+								 '/pnml')
 
 
 def load(input_net: AbstractPetriNet, filename):
@@ -152,7 +154,7 @@ def load(input_net: AbstractPetriNet, filename):
 
 	for c in net.iterfind('.//%splace' % ns):
 		place_counter += 1
-		if 'id' in c.attrib.keys(): # else marking
+		if 'id' in c.attrib.keys():  # else marking
 			xml_id = c.attrib['id']
 			name = get_name_or_id(c)
 

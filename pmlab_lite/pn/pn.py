@@ -47,9 +47,8 @@ class PetriNet(AbstractPetriNet):
 				index = idx
 				break
 
-
 		# shift places with larger index to the left
-		if index + 1 == len(self.places): # last index
+		if index + 1 == len(self.places):  # last index
 			self.places.pop(index)
 		else:
 			for idx in range(index, len(self.places) - 1):
@@ -65,7 +64,7 @@ class PetriNet(AbstractPetriNet):
 	def get_mapping(self):
 		return self.transitions
 
-	def add_transition(self, name, id = None):
+	def add_transition(self, name, id=None):
 		"""
 		Add a transition to the net. The name has to be a string.
 
@@ -76,7 +75,6 @@ class PetriNet(AbstractPetriNet):
 			ValueError: place identifier has to be unique
 			TypeError: place identifier has to be a string
 		"""
-
 
 		self.counter -= 1
 
@@ -94,7 +92,6 @@ class PetriNet(AbstractPetriNet):
 		else:
 			self.transitions[name] = [id]
 
-
 		return self
 
 	def remove_transition(self, name):
@@ -104,7 +101,6 @@ class PetriNet(AbstractPetriNet):
 		Args:
 			name: string of the transition
 		"""
-
 
 		for key, values in self.transitions.items():
 			if name in values:
@@ -128,10 +124,9 @@ class PetriNet(AbstractPetriNet):
 		Raises:
 			ValueError: source/target does not exists
 		"""
-		if source > 0 and target > 0 or  source < 0 and target < 0:
+		if source > 0 and target > 0 or source < 0 and target < 0:
 			raise ValueError('edges can only be added between places and '
 							 'transition and vice versa')
-
 
 		if source > 0:
 			# source is place
@@ -196,7 +191,6 @@ class PetriNet(AbstractPetriNet):
 			if p == place:
 				return idx
 
-
 	def is_enabled(self, transition):
 		"""
 		Check whether a transition is able to fire or not.
@@ -257,7 +251,7 @@ class PetriNet(AbstractPetriNet):
 		"""
 		seq = []
 		enabled_transitions = self.all_enabled_transitions()
-		while(len(enabled_transitions) > 0):
+		while (len(enabled_transitions) > 0):
 			t = enabled_transitions[randint(0, len(enabled_transitions) - 1)]
 			seq.append(t)
 			self.fire_transition(t)
@@ -277,7 +271,8 @@ class PetriNet(AbstractPetriNet):
 		"""
 
 		# flatten list
-		transition_mapping = [item for sublist in self.transitions.values() for item
+		transition_mapping = [item for sublist in self.transitions.values() for
+							  item
 							  in sublist]
 		return name in transition_mapping
 
@@ -302,7 +297,7 @@ class PetriNet(AbstractPetriNet):
 			List of all enabled transitions.
 		"""
 		transitions = [item for sublist in self.transitions.values() for item
-							  in sublist]
+					   in sublist]
 
 		return list(filter(lambda x: self.is_enabled(x), transitions))
 
@@ -326,12 +321,10 @@ class PetriNet(AbstractPetriNet):
 			idx = self.index_of_place(i)
 			self.marking[idx] -= 1
 
-
 		# update outgoing token
 		for o in outputs:
 			idx = self.index_of_place(o)
 			self.marking[idx] += 1
-
 
 	def __repr__(self):
 		"""
@@ -341,9 +334,9 @@ class PetriNet(AbstractPetriNet):
 		"""
 		desc = "Transitions: %s \n" \
 			   "Places: %s \n" \
-				"Capacities: %s \n" \
-		"Marking: %s \n" \
-			   "Edges: %s" %(self.transitions, self.places, self.capacity,
-							 self.marking, self.edges)
+			   "Capacities: %s \n" \
+			   "Marking: %s \n" \
+			   "Edges: %s" % (self.transitions, self.places, self.capacity,
+							  self.marking, self.edges)
 
 		return desc

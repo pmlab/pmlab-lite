@@ -4,8 +4,8 @@ from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
 
 
-def draw_petri_net(input_net:AbstractPetriNet, filename="petri_net",
-				 format="pdf"):
+def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
+				   format="pdf"):
 	"""
 	This function transforms the given Petri net structure
 	into DOT notation and returns it as a digraph object. Call
@@ -55,6 +55,7 @@ def draw_petri_net(input_net:AbstractPetriNet, filename="petri_net",
 
 	# dot.render()
 	return dot
+
 
 def draw_graph(graph: Graph, filename="graph", format="pdf"):
 	dot = Digraph(name=filename, format=format)
