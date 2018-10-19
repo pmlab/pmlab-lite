@@ -4,6 +4,7 @@ like direct follower graphs
 """
 from collections import defaultdict
 
+
 # from pmlab.pn import PetriNet
 
 

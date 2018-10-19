@@ -1,6 +1,7 @@
 from pmlab_lite.pn import AbstractPetriNet
 import xml.etree.ElementTree as xmltree
 
+
 def export(input_net: AbstractPetriNet, filename):
 	"""
 	Save the petri net in PNML format.
@@ -10,29 +11,33 @@ def export(input_net: AbstractPetriNet, filename):
 
 	"""
 
+	baseURL = '{http://www.pnml.org/version-2009/grammar/pnml}'
+
 	if ".pnml" not in filename:
 		filename = ".".join([filename, "pnml"])
 
 	def add_text(element, text):
 		xmltree.SubElement(
-			element, '{http://www.pnml.org/version-2009/grammar/pnml}text').text = text
+			element, ''.join([baseURL, 'text'])).text = text
 
 	def add_name(element, text):
 		add_text(xmltree.SubElement(
-			element, '{http://www.pnml.org/version-2009/grammar/pnml}name'), text)
+			element, ''.join([baseURL, 'name'])), text)
 
-	xmltree.register_namespace("pnml", "http://www.pnml.org/version-2009/grammar/pnml")
+	xmltree.register_namespace("pnml",
+							   "http://www.pnml.org/version-2009/grammar/pnml")
 
-	root = xmltree.Element('{http://www.pnml.org/version-2009/grammar/pnml}pnml')
-	net = xmltree.SubElement(root, '{http://www.pnml.org/version-2009/grammar/pnml}net', {
-		'{http://www.pnml.org/version-2009/grammar/pnml}id': 'pmlabNet1',
-		'{http://www.pnml.org/version-2009/grammar/pnml}type': 'http://www.pnml.org/version-2009/grammar/pnmlcoremodel'
-	})
+	root = xmltree.Element(''.join([baseURL, 'pnml']))
+	net = xmltree.SubElement(root, ''.join([baseURL, 'net']), {
+		''.join([baseURL, 'id']): 'pmlabNet1',
+		''.join([baseURL, 'type']): 'http://www.pnml.org/version-2009/grammar'
+									'/pnmlcoremodel'
+		})
 
 	add_name(net, filename)
-	page = xmltree.SubElement(net, '{http://www.pnml.org/version-2009/grammar/pnml}page', {
-		'{http://www.pnml.org/version-2009/grammar/pnml}id': 'n0'
-	})
+	page = xmltree.SubElement(net, ''.join([baseURL, 'page']), {
+		''.join([baseURL, 'id']): 'n0'
+		})
 
 	node_num = 1
 	id_map = {}
@@ -41,45 +46,46 @@ def export(input_net: AbstractPetriNet, filename):
 		name = str(p[0])
 
 		xml_id = "p%d" % node_num
-		node = xmltree.SubElement(page, '{http://www.pnml.org/version-2009/grammar/pnml}place',
-								  {'{http://www.pnml.org/version-2009/grammar/pnml}id': xml_id})
+		node = xmltree.SubElement(page, ''.join([baseURL, 'place']),
+								  {''.join([baseURL, 'id']): xml_id})
 		add_name(node, name)
 
 		# tokens = self.vp_place_initial_marking[p]
 		# if tokens >= 1:
-		#     marking = xmltree.SubElement(node, '{http://www.pnml.org/version-2009/grammar/pnml}initialMarking')
+		#     marking = xmltree.SubElement(node,
+		# '{http://www.pnml.org/version-2009/grammar/pnml}initialMarking')
 		#     add_text(marking, str(tokens))
 
 		id_map[p[0]] = xml_id
 		node_num += 1
 
-	for t in input_net.transitions:
-		assert t not in id_map
-		name = t
-		# if self.vp_transition_dummy[t]:
-		#     name = '' # empty label for dummies
-		xml_id = "t%d" % node_num
-		node = xmltree.SubElement(page, '{http://www.pnml.org/version-2009/grammar/pnml}transition',
-								  {'{http://www.pnml.org/version-2009/grammar/pnml}id': xml_id})
-		add_name(node, name)
+	for name, ids in input_net.transitions.items():
+		for id in ids:
+			assert id not in id_map
 
-		id_map[t] = xml_id
-		node_num += 1
+			xml_id = "t%d" % (id * -1)
+			node = xmltree.SubElement(page, ''.join([baseURL, 'transition']),
+									  {''.join([baseURL, 'id']): xml_id})
+			add_name(node, name)
+
+			id_map[id] = xml_id
+			node_num += 1
 
 	for e in input_net.edges:
 		xml_id = "arc%d" % node_num
-		node = xmltree.SubElement(page, '{http://www.pnml.org/version-2009/grammar/pnml}arc', {
-			'{http://www.pnml.org/version-2009/grammar/pnml}id': xml_id,
-			'{http://www.pnml.org/version-2009/grammar/pnml}source': id_map[e[0]],
-			'{http://www.pnml.org/version-2009/grammar/pnml}target': id_map[e[1]]
-		})
+		node = xmltree.SubElement(page, ''.join([baseURL, 'arc']), {
+			''.join([baseURL, 'id']): xml_id,
+			''.join([baseURL, 'source']): id_map[e[0]],
+			''.join([baseURL, 'target']): id_map[e[1]]
+			})
 		add_name(node, "%d" % 1)
 
 		node_num += 1
 
 	tree = xmltree.ElementTree(root)
 	tree.write(filename, encoding='UTF-8', xml_declaration=True,
-			   default_namespace='http://www.pnml.org/version-2009/grammar/pnml')
+			   default_namespace='http://www.pnml.org/version-2009/grammar'
+								 '/pnml')
 
 
 def load(input_net: AbstractPetriNet, filename):
@@ -93,6 +99,9 @@ def load(input_net: AbstractPetriNet, filename):
 	Raises:
 		ValueError: invalid PNML format
 	"""
+	transition_counter = 0
+	place_counter = 0
+
 	tree = xmltree.parse(filename)
 	ns = '{http://www.pnml.org/version-2009/grammar/pnml}'
 	root = tree.getroot()
@@ -131,35 +140,29 @@ def load(input_net: AbstractPetriNet, filename):
 	# They might be distributed in several <page> child tags
 
 	for c in net.iterfind('.//%stransition' % ns):
+		transition_counter -= 1
 		xml_id = c.attrib['id']
 		name = remove_suffix(get_name_or_id(c), '+complete')
 
+		if 'tau' in name:
+			name = ''
 		# If it has no name, it's probably a dummy transition
-		dummy = not has_name(c)
+		# dummy = not has_name(c)
 
-		id_map[xml_id] = name
-		input_net.add_transition(name)
+		id_map[xml_id] = transition_counter
+		input_net.add_transition(name, transition_counter)
 
 	for c in net.iterfind('.//%splace' % ns):
-		xml_id = c.attrib['id']
-		name = get_name_or_id(c)
+		place_counter += 1
+		if 'id' in c.attrib.keys():  # else marking
+			xml_id = c.attrib['id']
+			name = get_name_or_id(c)
 
-		p = input_net.add_place(int(name))
-		id_map[xml_id] = name
-	"""
-		marking = c.find('%sinitialMarking/%stext' % (ns, ns))
-		if marking is not None:
-			pn.set_initial_marking(p,int(marking.text))
-	"""
+			p = input_net.add_place(place_counter)
+			id_map[xml_id] = place_counter
 
 	for c in net.iterfind('.//%sarc' % ns):
 		s = id_map[c.attrib['source']]
 		t = id_map[c.attrib['target']]
 
-		if str.isnumeric(s):
-			s = int(s)
-
-		if str.isnumeric(t):
-			t = int(t)
-
-		input_net.add_edge(s, t)
+		input_net.add_edge(int(s), int(t))
