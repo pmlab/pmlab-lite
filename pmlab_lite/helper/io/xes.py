@@ -15,15 +15,17 @@ def import_from_xes(file):
             pass  # Just send the filename to xmltree.parse
     else:
         filename = file.name
+
+    ns = {'xes': 'http://www.xes-standard.org/'}
     tree = xmltree.parse(file)
     root = tree.getroot()
-    traces = root.findall('{http://www.xes-standard.org/}trace')
+    traces = root.findall('xes:trace', ns)
     imported_log = EventLog()
     for t in traces:
-        case_id = t.find('{http://www.xes-standard.org/}string[@key="concept:name"]').attrib['value']
-        for e in t.findall('{http://www.xes-standard.org/}event'):
-            activity_name = e.find('{http://www.xes-standard.org/}string[@key="concept:name"]').attrib['value']
-            timestamp = e.find('{http://www.xes-standard.org/}date[@key="time:timestamp"]').attrib['value']
+        case_id = t.find('xes:string[@key="concept:name"]', ns).attrib['value']
+        for e in t.findall('xes:event', ns):
+            activity_name = e.find('xes:string[@key="concept:name"]', ns).attrib['value']
+            timestamp = e.find('xes:date[@key="time:timestamp"]', ns).attrib['value']
             event = Event(activity_name, case_id)
             for a in e:
                 if a.attrib['key'] != "concept:name":
