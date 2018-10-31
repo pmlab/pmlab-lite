@@ -48,7 +48,7 @@ def import_from_xes(file):
                 event[a.attrib['key']] = parse(a.attrib['value'])
             # parse all boolean attributes
             for a in e.findall('xes:boolean', ns):
-                event[a.attrib['key']] = a.attrib['value'] == 'true'
+                event[a.attrib['key']] = a.attrib['value'].lower() == 'true'
             imported_log.add_event(event)
     return imported_log
 
