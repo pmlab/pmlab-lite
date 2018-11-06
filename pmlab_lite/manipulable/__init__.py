@@ -1,1 +1,1 @@
-from . manipulable import Manipulable
+from . manipulable import *
