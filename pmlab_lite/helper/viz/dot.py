@@ -42,12 +42,17 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 			dot.node(str(t))
 
 	# draw place
-	dot.attr('node', shape='circle', style="filled",
-			 color='lightgrey', penwidth="1", fontsize="10",
+	dot.attr('node', shape='circle', penwidth="1", fontsize="10",
 			 fontname="Helvetica")
 
-	for p in list(input_net.places.values()):
-		dot.node(str(p))
+	for id, p in input_net.places.items():
+		if input_net.marking[id] == 0:
+			dot.node(str(p), label="", xlabel=str(p))
+		elif input_net.marking[id] == 1:
+			dot.node(str(p), label="\u25CF", xlabel=str(p))
+		else:
+			dot.node(str(p), label=str(input_net.marking[id]),
+					 xlabel=str(p))
 
 	# draw edges
 	for e in input_net.edges:

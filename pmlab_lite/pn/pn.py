@@ -243,7 +243,7 @@ class PetriNet(AbstractPetriNet):
 
 		return self
 
-	def replay(self):
+	def replay(self, max_length):
 		"""Randomly replay the net starting from its current marking.
 
 		Returns:
@@ -251,11 +251,14 @@ class PetriNet(AbstractPetriNet):
 		"""
 		seq = []
 		enabled_transitions = self.all_enabled_transitions()
-		while (len(enabled_transitions) > 0):
+		while (len(enabled_transitions) > 0 and len(seq) < max_length):
 			t = enabled_transitions[randint(0, len(enabled_transitions) - 1)]
 			seq.append(t)
 			self.fire_transition(t)
 			enabled_transitions = self.all_enabled_transitions()
+
+		if len(seq) == max_length:
+			seq.append('BREAK')
 
 		return seq
 

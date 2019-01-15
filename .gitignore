@@ -5,6 +5,7 @@
 *.gv
 *.iml
 *.xml
+*.pyc
 
 # directories
 __pycache__/
