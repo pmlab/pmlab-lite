@@ -2,13 +2,14 @@ from pmlab_lite.pn import AbstractPetriNet
 import xml.etree.ElementTree as xmltree
 
 
-def export(input_net: AbstractPetriNet, filename):
+
+def export(input_net: AbstractPetriNet, filename, export_marking=True):
 	"""
-	Save the petri net in PNML format.
+	Save Petri net in PNML format.
 
-	Args:
-		filename: file or filename in which the PN has to be written
-
+	:param input_net: Petri net object
+	:param filename: file or filename of the outout file
+	:param export_marking: whether the current marking should be exported or not
 	"""
 
 	baseURL = '{http://www.pnml.org/version-2009/grammar/pnml}'
@@ -42,21 +43,22 @@ def export(input_net: AbstractPetriNet, filename):
 	node_num = 1
 	id_map = {}
 
-	for p in input_net.places:
-		name = str(p[0])
+	for k, p in input_net.places.items():
+		name = str(p)
 
 		xml_id = "p%d" % node_num
 		node = xmltree.SubElement(page, ''.join([baseURL, 'place']),
 								  {''.join([baseURL, 'id']): xml_id})
 		add_name(node, name)
 
-		# tokens = self.vp_place_initial_marking[p]
-		# if tokens >= 1:
-		#     marking = xmltree.SubElement(node,
-		# '{http://www.pnml.org/version-2009/grammar/pnml}initialMarking')
-		#     add_text(marking, str(tokens))
+		if export_marking:
+			tokens = input_net.marking[k]
+			if tokens >= 1:
+				marking = xmltree.SubElement(node, ''.join([baseURL,
+															'initialMarking']))
+				add_text(marking, str(tokens))
 
-		id_map[p[0]] = xml_id
+		id_map[p] = xml_id
 		node_num += 1
 
 	for name, ids in input_net.transitions.items():
@@ -154,12 +156,17 @@ def load(input_net: AbstractPetriNet, filename):
 
 	for c in net.iterfind('.//%splace' % ns):
 		place_counter += 1
+		init_marking = c.find('%sinitialMarking/text' % ns)
+
 		if 'id' in c.attrib.keys():  # else marking
 			xml_id = c.attrib['id']
 			name = get_name_or_id(c)
 
 			p = input_net.add_place(place_counter)
 			id_map[xml_id] = place_counter
+
+		if init_marking is not None:
+			input_net.add_marking(place_counter, int(init_marking.text))
 
 	for c in net.iterfind('.//%sarc' % ns):
 		s = id_map[c.attrib['source']]
