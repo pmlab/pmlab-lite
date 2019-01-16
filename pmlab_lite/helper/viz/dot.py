@@ -19,6 +19,27 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 		Digraph object
 	"""
 
+	def get_marking(marking: int):
+		"""
+		Create label for a place with its corresponding number of tokens.
+
+		:param marking: number of token
+		:return: label
+		"""
+
+		if marking < 4:
+			token = '&#11044;'
+			if marking == 0:
+				return ''
+			elif marking == 1:
+				return '<<B>%s</B>>' % token
+			elif marking == 2:
+				return '<<B>%s %s</B>>' % (token, token)
+			else:
+				return '<<B>%s<BR/>%s %s</B>>' % (token, token, token)
+		else:
+			return '4'
+
 	dot = Digraph(name=filename, format=format)
 	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35",
 			 ranksep="0.25 equally")
@@ -45,14 +66,10 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 	dot.attr('node', shape='circle', penwidth="1", fontsize="10",
 			 fontname="Helvetica")
 
+	# draw marking
 	for id, p in input_net.places.items():
-		if input_net.marking[id] == 0:
-			dot.node(str(p), label="", xlabel=str(p))
-		elif input_net.marking[id] == 1:
-			dot.node(str(p), label="\u25CF", xlabel=str(p))
-		else:
-			dot.node(str(p), label=str(input_net.marking[id]),
-					 xlabel=str(p))
+		label = get_marking(input_net.marking[id])
+		dot.node(str(p), label=label, xlabel=str(p))
 
 	# draw edges
 	for e in input_net.edges:
