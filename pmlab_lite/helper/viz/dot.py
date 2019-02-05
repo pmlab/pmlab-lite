@@ -20,7 +20,7 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 	"""
 
 	def get_marking(marking: int):
-		"""
+		"""viz import
 		Create label for a place with its corresponding number of tokens.
 
 		:param marking: number of token
@@ -79,7 +79,8 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 	return dot
 
 
-def draw_graph(graph: Graph, filename="graph", format="pdf"):
+def draw_graph(graph: Graph, filename="graph", format="pdf", render=False,
+			   view=True):
 	dot = Digraph(name=filename, format=format)
 
 	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35",
@@ -97,4 +98,10 @@ def draw_graph(graph: Graph, filename="graph", format="pdf"):
 		for target in graph.graph[node]:
 			dot.edge(str(node), str(target))
 
+	if render:
+		render_dot(dot, filename, view)
+
 	return dot
+
+def render_dot(dot: Digraph, name: str, cleanup=True, view=True):
+	dot.render(filename = name, view = view, cleanup = cleanup)
