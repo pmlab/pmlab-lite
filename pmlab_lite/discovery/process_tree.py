@@ -3,17 +3,18 @@ import string
 from copy import copy
 
 
-import inductive_miner as IM
-from graph import Graph
+#import inductive_miner as IM
+from pmlab_lite.helper.graph import Graph
 
 from pmlab_lite.pn import PetriNet
-
+#from pmlab_lite.discovery.inductive_miner import InductiveMiner as IM
 
 class ProcessTree():
 
-    def __init__(self, log, level, parent):
+    def __init__(self, miner, log: list, level: int = 0, parent: str = 'root'):
         print('------------------------')
         print('(tree) LOG %s' % log)
+        self.miner = miner
         self.level = level
         self.parent = parent
         self.id = self.gen_id()
@@ -42,17 +43,17 @@ class ProcessTree():
               (seq_cut, para_cut, excl_cut, loop_cut))
 
         if excl_cut:
-            logs = IM.split_log(self.log, excl_cut, IM.EXC)
-            self.cut = IM.EXC
+            logs = self.miner.split_log(self.log, excl_cut, self.miner.EXC)
+            self.cut = self.miner.EXC
             for sub_log in logs:
                 print('(tree) excl_cut %s' % sub_log)
-                self.children.append(ProcessTree(sub_log, self.level + 1,
-                                                 self.id))
+                self.children.append(ProcessTree(self.miner, sub_log,
+                self.level + 1, self.id))
         # ------------------------------------
         elif seq_cut:
             # print(seq_cut)
-            logs = IM.split_log(self.log, seq_cut, IM.SEQ)
-            self.cut = IM.SEQ
+            logs = self.miner.split_log(self.log, seq_cut, self.miner.SEQ)
+            self.cut = self.miner.SEQ
             # print('(tree) seq_cut logs: %s ' % logs)
             # for cut in seq_cut:
             #    if len(cut) <= 1:
@@ -63,13 +64,14 @@ class ProcessTree():
                     # at least 2 traces
                     if any([len(trace) > 1 for trace in sub_log]):
                         # print('(tree) 1.1')
-                        self.children.append(ProcessTree(sub_log,
+                        self.children.append(ProcessTree(self.miner, sub_log,
                                                          self.level + 1,
                                                          self.id))
                     else:
                         if any([len(trace) == 0 for trace in sub_log]):
                             # print('(tree) 1.2.1')
-                            self.children.append(ProcessTree(sub_log,
+                            self.children.append(ProcessTree(self.miner,
+                            sub_log,
                                                              self.level,
                                                              self.parent))
                         else:
@@ -81,17 +83,17 @@ class ProcessTree():
                         self.children.append(sub_log[0][0])
                     else:
                         # print('(tree) 2.2')
-                        self.children.append(ProcessTree(sub_log,
+                        self.children.append(ProcessTree(self.miner, sub_log,
                                                          self.level + 1,
                                                          self.id))
         # ------------------------------------
         elif para_cut:
-            self.cut = IM.PAR
-            logs = IM.split_log(self.log, para_cut, IM.PAR)
+            self.cut = self.miner.PAR
+            logs = self.miner.split_log(self.log, para_cut, self.miner.PAR)
             for sub_log in logs:
                 if len(sub_log) > 1:
-                    self.children.append(ProcessTree(sub_log, self.level + 1,
-                                                     self.id))
+                    self.children.append(ProcessTree(self.miner, sub_log,
+                    self.level + 1, self.id))
                 else:
                     # print('(tree) para sub_log %s' % sub_log)
                     if len(sub_log[0]) > 0:
@@ -100,20 +102,20 @@ class ProcessTree():
                         self.children.append('tau')
         # ------------------------------------
         elif loop_cut:
-            logs = IM.split_log(self.log, loop_cut, IM.LOOP)
-            self.cut = IM.LOOP
+            logs = self.miner.split_log(self.log, loop_cut, self.miner.LOOP)
+            self.cut = self.miner.LOOP
             # for cut in loop_cut:
             #    if len(cut) <= 1:
             #        self.children.append(cut[0])
             for sub_log in logs:
                 print('(tree) sub log loop %s' % sub_log)
                 if len(sub_log) > 1:
-                    self.children.append(ProcessTree(sub_log, self.level + 1,
-                                                     self.id))
+                    self.children.append(ProcessTree(self.miner, sub_log,
+                    self.level + 1, self.id))
                 else:
                     print('(tree) loop sub_log %s' % sub_log)
                     if len(sub_log[0]) > 1:
-                        self.children.append(ProcessTree(sub_log,
+                        self.children.append(ProcessTree(self.miner, sub_log,
                                                          self.level + 1,
                                                          self.id))
                     if len(sub_log[0]) == 1:
@@ -128,12 +130,12 @@ class ProcessTree():
                     if trace[0] not in self.children:
                         self.children.append(trace[0])
                 elif len(trace) > 1:  # flower
-                    self.cut = IM.LOOP
+                    self.cut = self.miner.LOOP
                     if trace[0] not in self.children:
                         self.children.append(trace[0])
                     self.children.append('tau')
                 else:  # empty trace
-                    self.cut = IM.EXC
+                    self.cut = self.miner.EXC
                     self.children.append('tau')
             print('(tree) trivial %s' % self.log)
 
@@ -234,7 +236,7 @@ class ProcessTree():
         self.reduce()
         print('%s (%s/%s): %s (%s) chil: %s' %
               (self.level, self.parent, self.id,
-               IM.print_cut(self.cut), self.leafs, len(self.children)))
+               self.miner.print_cut(self.cut), self.leafs, len(self.children)))
 
         for child in self.children:
             child.print_tree()

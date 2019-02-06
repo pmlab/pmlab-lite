@@ -2,7 +2,7 @@ from graphviz import Digraph
 
 from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
-from pmlab_lite.discovery import inductive_miner as IM
+from pmlab_lite.discovery import ProcessTree #, inductive_miner as IM
 
 
 def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
@@ -118,14 +118,14 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
 		:return str: symbol
 		"""
 
-		if cut == IM.SEQ:
+		if cut == tree.miner.SEQ:
 			return '&#10140;'
-	    elif cut == IM.PAR:
-	        return '+'
-	    elif cut == IM.EXC:
-	        return 'X'
-	    elif cut == IM.LOOP:
-	        return '&#x21BB;'
+		elif cut == tree.miner.PAR:
+		    return '+'
+		elif cut == tree.miner.EXC:
+		    return 'X'
+		elif cut == tree.miner.LOOP:
+		    return '&#x21BB;'
 
 	def draw_children(parent: str, child, dot: Digraph):
 
@@ -160,18 +160,22 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
 	    dot.edge(parent, child_name)
 	    return dot
 
-    dot = Digraph(name)
+	dot = Digraph(name)
 
-    dot.attr(rankdir="TB", ranksep="equally")
+	dot.attr(rankdir="TB", ranksep="equally")
 
-    # draw root
-    dot.attr('node', shape='circle', penwidth="1", fontsize="10",
-             fontname="Helvetica", height="0.3", fixedsize="true")
+	# draw root
+	dot.attr('node', shape='circle', penwidth="1", fontsize="10",
+	         fontname="Helvetica", height="0.3", fixedsize="true")
 
-    node_name = ''.join([str(tree.parent), str(tree.id)])
-    dot.node(node_name, label=gen_label(tree.cut))
+	node_name = ''.join([str(tree.parent), str(tree.id)])
+	dot.node(node_name, label=gen_label(tree.cut))
 
-    for child in tree.children:
-        dot = draw_children(node_name, child, dot)
+	for child in tree.children:
+	    dot = draw_children(node_name, child, dot)
 
-    render_dot(dot, 'process_tree') # TODO: change to just return the object
+	render_dot(dot, 'process_tree') # TODO: change to just return the object
+
+# TODO: consider to remove this
+def render_dot(dot: Digraph, name: str, cleanup=True, view=True):
+    dot.render(filename=name, view=view, cleanup=cleanup)

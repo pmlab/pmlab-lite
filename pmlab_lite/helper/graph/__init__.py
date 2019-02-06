@@ -3,8 +3,8 @@ This package provides a class to build simple graph data structures,
 like directly follows graph.
 """
 from copy import copy
-from pprint import pprint
 from collections import defaultdict
+from pmlab_lite.pn import PetriNet
 
 
 class Graph():
