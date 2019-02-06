@@ -2,6 +2,7 @@ from graphviz import Digraph
 
 from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
+from pmlab_lite.discovery import inductive_miner as IM
 
 
 def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
@@ -98,3 +99,79 @@ def draw_graph(graph: Graph, filename="graph", format="pdf"):
 			dot.edge(str(node), str(target))
 
 	return dot
+
+
+def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
+	"""
+
+	:param tree:
+	:param name:
+	:param format:
+
+	:return:
+	"""
+	def gen_label(cut: int):
+		"""
+		Return node symbol, depending on cut type
+		:param cut: cut code
+
+		:return str: symbol
+		"""
+
+		if cut == IM.SEQ:
+			return '&#10140;'
+	    elif cut == IM.PAR:
+	        return '+'
+	    elif cut == IM.EXC:
+	        return 'X'
+	    elif cut == IM.LOOP:
+	        return '&#x21BB;'
+
+	def draw_children(parent: str, child, dot: Digraph):
+
+	    def draw_node(parent, sub_tree, dot: Digraph):
+	        dot.attr('node', shape='circle', penwidth="1", fontsize="10",
+	                 fontname="Helvetica", height="0.3", fixedsize="true")
+	        node_name = ''.join([str(sub_tree.parent), str(sub_tree.id)])
+	        dot.node(node_name, label=gen_label(sub_tree.cut))
+
+	        for child in sub_tree.children:
+	            draw_children(node_name, child, dot)
+
+	    def draw_leaf(parent, leaf, dot: Digraph):
+	        dot.attr('node', shape='box', color='black', penwidth="1", fontsize="10",
+	                 fontname="Helvetica", height="0.5", fixedsize="true",
+	                 style='rounded')
+	        leaf_name = ''.join([parent, str(leaf)])
+	        if leaf == 'tau':
+	            dot.node(leaf_name, label=str(leaf), style='filled, rounded')
+	        else:
+	            dot.node(leaf_name, label=str(leaf))
+
+	    if isinstance(child, ProcessTree):
+	        draw_node(parent, child, dot)
+	        child_name = ''.join([str(child.parent), str(child.id)])
+	    else:
+	        draw_leaf(parent, child, dot)
+	        print(parent, child)
+	        child_name = ''.join([parent, child])
+
+	    # draw edge
+	    dot.edge(parent, child_name)
+	    return dot
+
+    dot = Digraph(name)
+
+    dot.attr(rankdir="TB", ranksep="equally")
+
+    # draw root
+    dot.attr('node', shape='circle', penwidth="1", fontsize="10",
+             fontname="Helvetica", height="0.3", fixedsize="true")
+
+    node_name = ''.join([str(tree.parent), str(tree.id)])
+    dot.node(node_name, label=gen_label(tree.cut))
+
+    for child in tree.children:
+        dot = draw_children(node_name, child, dot)
+
+    render_dot(dot, 'process_tree') # TODO: change to just return the object
