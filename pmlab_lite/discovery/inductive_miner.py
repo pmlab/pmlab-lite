@@ -6,8 +6,6 @@ class InductiveMiner():
 
     def __init__(self, log: EventLog):
         self.log = self.prepare_log(log)
-        self.process_tree = None
-        self.petri_net = None
 
         # cut constants
         self.SEQ = 1
@@ -15,8 +13,8 @@ class InductiveMiner():
         self.EXC = 3
         self.LOOP = 4
 
-    def discover(self):
-        self.process_tree = ProcessTree(self, self.log)
+    def discover(self) -> ProcessTree:
+        return ProcessTree(self, self.log)
 
     def prepare_log(self, event_log: EventLog) -> list:
         log = []
