@@ -121,9 +121,9 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
 		if cut == tree.miner.SEQ:
 			return '&#10140;'
 		elif cut == tree.miner.PAR:
-		    return '+'
+		    return '&#43;'
 		elif cut == tree.miner.EXC:
-		    return 'X'
+		    return '&#215;'
 		elif cut == tree.miner.LOOP:
 		    return '&#x21BB;'
 
