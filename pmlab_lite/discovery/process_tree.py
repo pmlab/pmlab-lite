@@ -2,9 +2,7 @@ import random
 import string
 from copy import copy
 
-# from pmlab_lite.discovery import InductiveMiner
 from pmlab_lite.discovery.cut import Cut
-# from pmlab_lite.discovery import InductiveMiner
 from pmlab_lite.helper.graph import Graph
 
 
@@ -12,9 +10,6 @@ class ProcessTree():
 
 	def __init__(self, miner, log: list, level: int = 0,
 				 parent='root', discover = True):
-
-		print('---------')
-		# print('(tree) init log: %s' %log)
 
 		self.miner = miner
 		self.level = level
@@ -27,13 +22,18 @@ class ProcessTree():
 		self.cut = None
 		self.children = []
 
-		print('(tree) cc: %s' %len(self.cc))
-		print('(tree) scc: %s' %len(self.scc))
+		print('---------')
+		print('(tree) number of cc: %s' %len(self.cc))
+		print('(tree) number of scc: %s' %len(self.scc))
 
 		if discover:
 			self.find_cuts()
 
-	def gen_id(self):
+	def gen_id(self) -> str:
+		"""
+		Returns random generated id.
+		:return: String
+		"""
 		id = [str(self.level)]
 		for i in range(4):
 			id.append(random.choice(string.ascii_letters))
@@ -58,8 +58,8 @@ class ProcessTree():
 
 		if len(seq_cut) > 0:
 			self.cut = Cut.SEQ
-			sub_logs = self.miner.split_log(seq_cut, 5, self.log)
-			print('(tree) seq. cut %s' %(sub_logs)) #log_left, log_right))
+			sub_logs = self.miner.split_log(seq_cut, Cut.SEQ, self.log)
+			print('(tree) seq. cut %s' %(sub_logs))
 
 
 			for sub_log in sub_logs:
@@ -68,17 +68,6 @@ class ProcessTree():
 													 self.level + 1, self))
 				else:
 					self.children.append(insert_base_case(sub_log[0]))
-
-
-			# if len(log_left) == 1:
-			# 	for activity in log_left[0]:
-			# 		self.children.append(activity)
-			# else:
-			# 	self.children.append(ProcessTree(self.miner, log_left, self.level
-			# 									 + 1, self.id))
-			#
-			# self.children.append(ProcessTree(self.miner, log_right, self.level
-			# 								 + 1, self.id))
 
 		elif len(excl_cut) > 0:
 			self.cut = Cut.EXCL
@@ -108,12 +97,6 @@ class ProcessTree():
 				else:
 					self.children.append(insert_base_case(sub_log[0]))
 
-			# self.children.append(ProcessTree(self.miner, log_left,
-			# 								 self.level + 1, self))
-			#
-			# self.children.append(ProcessTree(self.miner, log_right,
-			# 								 self.level + 1, self))
-
 		elif len(loop_cut) > 0:
 			self.cut = Cut.LOOP
 			log_left, log_right = self.miner.split_log(loop_cut, Cut.LOOP,
@@ -128,19 +111,6 @@ class ProcessTree():
 			self.children.append(ProcessTree(self.miner, log_right,
 											 self.level + 1, self))
 
-			# for sub_log in logs:
-			# 	print('(tree) sub log loop %s' % sub_log)
-			# 	if len(sub_log) > 1:
-			# 		self.children.append(ProcessTree(self.miner, sub_log,
-			# 										 self.level + 1, self.id))
-			# 	else:
-			# 		print('(tree) loop sub_log %s' % sub_log)
-			# 		if len(sub_log[0]) > 1:
-			# 			self.children.append(ProcessTree(self.miner, sub_log,
-			# 											 self.level + 1,
-			# 											 self))
-			# 		if len(sub_log[0]) == 1:
-			# 			self.children.append(sub_log[0][0])
 		else:
 			print('(tree) base case: %s' %self.log)
 			if len(self.log) > 1:
@@ -165,8 +135,10 @@ class ProcessTree():
 
 	def find_seq(self):
 		print('(tree) search for SEQ')
+
 		if(len(self.scc) > 1 and len(set(self.dfg.start_nodes))) == 1:
 			if(len(self.cc) == 1):
+
 				mapping = {}
 				for comp in self.scc:
 					mapping[len(mapping)] = comp
@@ -178,9 +150,9 @@ class ProcessTree():
 					return None
 
 				sorted_scc = {}
-				scc = self.scc  # TODO dont use mapping
+				scc = self.scc  # TODO don't use mapping
 				# print(scc)
-				g = self.dfg  # TODO dont use mapping
+				g = self.dfg  # TODO don't use mapping
 				# pprint.pprint(g.vertexes)
 
 				for comp in scc:
@@ -190,29 +162,22 @@ class ProcessTree():
 							if g.is_reachable(comp[0], comp2[0]) and \
 									not g.is_reachable(comp2[0], comp[0]):
 								# comp before comp2
-								# print('%s is BEFORE %s' %(comp, comp2))
 								sorted_scc[get_mapping(comp)][0].append(comp2)
 							elif not g.is_reachable(comp[0], comp2[0]) and \
 									g.is_reachable(comp2[0], comp[0]):
 								# comp after comp2
-								# print('%s is AFTER %s' %(comp, comp2))
 								sorted_scc[get_mapping(comp)][1].append(comp2)
 							else:
-								# eather parallel or exclusive
-								# print('%s and %s are PARALLEL/EXCL' %(comp,
-								# comp2))
+								# either parallel or exclusive
 								sorted_scc[get_mapping(comp)][2].append(comp2)
 
-				# pprint.pprint(sorted_scc)
 
-				#############
 				# find very first activity
 				first = []
 				for key, relations in sorted_scc.items():
 					if len(relations[1]) == 0:
 						first.append(key)
 
-				#############
 				# get all succeeding events in no order
 				first = mapping[first[0]]
 				next_candidates = []
@@ -220,33 +185,21 @@ class ProcessTree():
 					if first in relations[1]:  # [before][after][para/excl]
 						next_candidates.append(mapping[key])
 
-				# print('next candidates')
-				# pprint.pprint(next_candidates)
-				#############
+
 				# sort succeeding events
 				pre = [first]
-
-				next = None
 				while (len(next_candidates) > 0):
 					add = True
-					# print('pre: %s' %pre)
 					for candidate in next_candidates:
 						for key, relations in sorted_scc.items():
 							if candidate in relations[0]:
 								if mapping[key] not in pre:
-									# print('%s removed -> %s; %s' %(
-									# candidate, relations[1], key))
 									add = False
 						if add:
-
-							next = candidate
-							# print('%s is next' %next)
-							pre.append(next)
-							next_candidates.remove(next)
-				# print('total order of scc %s' %pre)
+							pre.append(candidate)
+							next_candidates.remove(candidate)
 
 				result = []
-
 				for idx, comp in enumerate(pre):
 					if len(sorted_scc[get_mapping(comp)][2]) > 0:
 						if idx > 0 and len(
@@ -257,16 +210,6 @@ class ProcessTree():
 					else:
 						result.append(comp)
 
-				print('(tree) seq: %s' %result)
-
-				final_result = []
-				for ele in result:
-					if len(ele) == 1:
-						final_result.append(ele[0])
-					else:
-						break
-
-				# return [final_result]
 				return result
 			else:
 				print('(tree) No sequence -> multiple CC OR multiple start '
@@ -309,16 +252,8 @@ class ProcessTree():
 	def find_loop(self):
 		print('(tree) search for LOOP')
 
-		# def cmp_in_scc(cmp):
-		# 	for s in self.scc:
-		# 		if sorted(cmp) == sorted(s):
-		# 			return True
-		# 	return False
 
 		g_i = self.dfg.invert()
-		scc_i = g_i.get_scc()
-		# print('(tree) start nodes %s' % g_i.start_nodes)
-		# print('(tree) loop scc_i %s' % scc_i)
 
 		g_reduced = g_i.remove_start()
 		g_reduced = g_reduced.remove_end()
@@ -348,6 +283,9 @@ class ProcessTree():
 			return [forward, backward]
 
 	def print_tree(self):
+		"""
+		Print tree structure to console.
+		"""
 
 		def print_cut(cut: int) -> str:
 			if cut == Cut.SEQ:
@@ -363,7 +301,7 @@ class ProcessTree():
 			parent = self.parent.id
 		else:
 			parent = 'root'
-		print('%s (%s/%s): %s chil: %s' %
+		print('%s (%s/%s) node: %s children: %s' %
 			  (self.level, parent, self.id,
 			   print_cut(self.cut), self.children))
 

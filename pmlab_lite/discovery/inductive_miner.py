@@ -29,23 +29,6 @@ class InductiveMiner():
 		log_right = []
 
 		if cut == Cut.SEQ:
-			for trace in log:
-				split_arg = split[0]
-
-				if all([ele in trace for ele in split[0]]):
-					left_part = split_arg
-					split_index = trace.index(split_arg[-1]) + 1
-					right_part = trace[split_index:]
-				else:
-					left_part = []
-					right_part = trace
-
-				if right_part not in log_right:
-					log_right.append(right_part)
-
-				if left_part not in log_left:
-					log_left.append(left_part)
-		elif cut == 5:
 			# max sequence cut
 			logs = []
 			for part in split:
