@@ -4,7 +4,6 @@ from pmlab_lite.discovery.cut import Cut
 from pmlab_lite.discovery.process_tree import ProcessTree
 from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
-# from pmlab_lite.discovery import ProcessTree  # , inductive_miner as IM
 
 
 def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
@@ -103,14 +102,17 @@ def draw_graph(graph: Graph, filename="graph", format="pdf"):
 	return dot
 
 
-def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
+def draw_process_tree(tree: ProcessTree, name='process_tree', format='png',
+					  render=True):
 	"""
+	This function transforms the given process tree
+	into DOT notation renders it and returns it as a digraph object.
 
 	:param tree: process tree object
-	:param name:
-	:param format:
+	:param name: file name
+	:param format: file format
 
-	:return:
+	:return: Digraph object
 	"""
 
 	def gen_label(cut: int):
@@ -132,9 +134,10 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
 
 	def draw_children(parent: str, child, dot: Digraph):
 
-		def draw_node(parent, sub_tree, dot: Digraph):
+		def draw_node(sub_tree, dot: Digraph):
 			dot.attr('node', shape='circle', penwidth="1", fontsize="10",
 					 fontname="Helvetica", height="0.3", fixedsize="false")
+
 			node_name = ''.join([str(sub_tree.parent), str(sub_tree.id)])
 			dot.node(node_name, label=gen_label(sub_tree.cut))
 
@@ -145,6 +148,7 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
 			dot.attr('node', shape='box', color='black', penwidth="1",
 					 fontsize="10",
 					 fontname="Helvetica", height="0.5", fixedsize="false")
+
 			leaf_name = ''.join([parent, str(leaf)])
 			if leaf == 'tau':
 				dot.node(leaf_name, label=str(leaf), shape="square",
@@ -153,11 +157,10 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
 				dot.node(leaf_name, label=str(leaf))
 
 		if isinstance(child, ProcessTree):
-			draw_node(parent, child, dot)
+			draw_node(child, dot)
 			child_name = ''.join([str(child.parent), str(child.id)])
 		else:
 			draw_leaf(parent, child, dot)
-			# print(parent, child)
 			child_name = ''.join([parent, child])
 
 		# draw edge
@@ -172,20 +175,27 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png'):
 	dot.attr('node', shape='circle', penwidth="1", fontsize="10",
 			 fontname="Helvetica", height="0.3", fixedsize="true")
 
-	if isinstance(tree.parent, ProcessTree):
-		parent_str = str(tree.parent.id)
-	else:
-		parent_str = 'root'
-
-	node_name = ''.join([parent_str, str(tree.id)])
+	node_name = ''.join(['root', str(tree.id)])
 	dot.node(node_name, label=gen_label(tree.cut))
 
 	for child in tree.children:
 		dot = draw_children(node_name, child, dot)
 
-	render_dot(dot, 'process_tree')  # TODO: change to just return the object
+	if render:
+		render_dot(dot, 'process_tree')
+
+	return dot
 
 
-# TODO: consider to remove this
 def render_dot(dot: Digraph, name: str, cleanup=True, view=True):
+	"""
+	Render the given DOT object to file. After rendering, the image can be
+	shown and artifacts can be removed.
+
+	:param dot: DOT object
+	:param name: file name
+	:param cleanup: remove dot artifacts after rendering
+	:param view: open file after rendering
+	"""
+
 	dot.render(filename=name, view=view, cleanup=cleanup)
