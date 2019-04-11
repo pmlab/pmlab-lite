@@ -2,7 +2,7 @@
 This package provides a class to build simple graph data structures,
 like directly follows graph.
 """
-from copy import copy
+from copy import copy, deepcopy
 from collections import defaultdict
 from pmlab_lite.pn import PetriNet
 
@@ -21,6 +21,7 @@ class Graph():
 
         if t not in self.vertexes.keys():
             self.vertexes[t] = []
+
 
     def is_reachable(self, o, t):
         # set all nodes to unvisited
@@ -56,8 +57,12 @@ class Graph():
         return self
 
     def from_seq(self, seq: list):
-        for o, t in zip(seq, seq[1:]):
-            self.add_edge(o, t)
+        if len(seq) > 1:
+            for o, t in zip(seq, seq[1:]):
+                self.add_edge(o, t)
+        elif len(seq) == 1:
+            if seq[0] not in self.vertexes.keys():
+                self.vertexes[seq[0]] = []
 
     def from_petrinet(self, pn: PetriNet):
         """
@@ -70,6 +75,37 @@ class Graph():
             for e in pn.edges:
                 if l[1] == e[0]:
                     self.add_edge(l[0], e[1])
+
+    def get_cc(self):
+
+        def dfs(temp, node, visited, nodes):
+
+            visited[nodes.index(node)] = True
+            temp.append(node)
+
+            for n in u_graph[node]:
+                if visited[nodes.index(n)] == False:
+                    temp = dfs(temp, n, visited, nodes)
+            return temp
+
+        cc = []
+
+        # copy for undirected graph
+        u_graph = deepcopy(self.vertexes)
+        nodes = list(u_graph)
+        visited = [False] * len(nodes)
+
+        for k, v in u_graph.items():
+            for n in v:
+                if k not in u_graph[n]:
+                    u_graph[n].append(k)
+
+        for n in u_graph.keys():
+            if visited[nodes.index(n)] == False:
+                temp = []
+                cc.append(dfs(temp, n, visited, nodes))
+
+        return cc
 
     def get_scc(self):
 

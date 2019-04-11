@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
 	name='pmlab_lite',
-    version='0.1',
+    version='0.1.1',
     description='Process Mining scripting environment',
 	classifiers=[
 			'Development Status :: 2 - Pre-Alpha',
