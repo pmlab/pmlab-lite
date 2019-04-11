@@ -1,10 +1,5 @@
 from functools import reduce
-
-# from pmlab_lite.discovery import ProcessTree
-from pmlab_lite.discovery import ProcessTree
-from .cut import Cut
-
-
+from pmlab_lite.discovery import ProcessTree, Cut
 from pmlab_lite.log import EventLog
 
 
@@ -13,7 +8,13 @@ class InductiveMiner():
 	def __init__(self, log: EventLog):
 		self.log = self.prepare_log(log)
 
-	def prepare_log(self, event_log: EventLog):
+	def prepare_log(self, event_log: EventLog) -> list:
+		"""
+		Convert EventLog into simple list structure.
+		:param event_log: EventLog
+		:return: list
+		"""
+
 		log = []
 		for trace in event_log.get_traces():
 			red_trace = []
