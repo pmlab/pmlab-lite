@@ -182,7 +182,7 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png',
 		dot = draw_children(node_name, child, dot)
 
 	if render:
-		render_dot(dot, 'process_tree')
+		render_dot(dot, name)
 
 	return dot
 
