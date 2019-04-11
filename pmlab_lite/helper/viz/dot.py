@@ -91,12 +91,12 @@ def draw_graph(graph: Graph, filename="graph", format="pdf"):
 	dot.attr('node', penwidth="1", fontsize="10",
 			 fontname="Helvetica")
 
-	for node in graph.graph:
+	for node in graph.vertexes:
 		dot.node(str(node))
 
 	# draw edges
-	for node in graph.graph:
-		for target in graph.graph[node]:
+	for node in graph.vertexes:
+		for target in graph.vertexes[node]:
 			dot.edge(str(node), str(target))
 
 	return dot

@@ -201,15 +201,15 @@ class ProcessTree():
 
 				result = []
 				for idx, comp in enumerate(pre):
+					print(comp)
 					if len(sorted_scc[get_mapping(comp)][2]) > 0:
-						if idx > 0 and len(
-								sorted_scc[get_mapping(pre[idx - 1])][2]) > 0:
+						if idx > 0 and \
+								len(sorted_scc[get_mapping(pre[idx - 1])][2]) > 0:
 							result[-1].append(comp)
 						else:
 							result.append([comp])
 					else:
 						result.append(comp)
-
 				return result
 			else:
 				print('(tree) No sequence -> multiple CC OR multiple start '

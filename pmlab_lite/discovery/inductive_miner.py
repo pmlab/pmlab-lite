@@ -35,7 +35,8 @@ class InductiveMiner():
 			for part in split:
 				sub_log = []
 
-				if len(part) > 1:
+				if len(part) > 1 and \
+						all([isinstance(sub, list) for sub in part]):
 					part = list(reduce(lambda x, y: x + y, part))
 
 				for trace in log:
@@ -45,6 +46,7 @@ class InductiveMiner():
 							sub_log.append(part_of_trace)
 					else:
 						if [] not in sub_log:
+
 							sub_log.append([])
 				logs.append(sub_log)
 
