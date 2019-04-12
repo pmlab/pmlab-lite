@@ -45,10 +45,16 @@ class TestProcessTree(TestCase):
 			   ['a', 'b'],
 			   ['b', 'a']]
 
+		# log = [['supervisor signature',  # i
+		# 		'sign application'],  # j
+		# 		['sign application',  # j
+		# 		'supervisor signature']]  # i
+
 		tree = ProcessTree(InductiveMiner(EventLog()), log, discover=False)
 
 		split = tree.find_para()
 		split.sort()
+		print(split)
 		self.assertListEqual(split, [['a'], ['b']])
 
 
