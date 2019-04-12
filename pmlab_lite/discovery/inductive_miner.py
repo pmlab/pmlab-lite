@@ -1,6 +1,7 @@
 from functools import reduce
 from pmlab_lite.discovery import ProcessTree, Cut
 from pmlab_lite.log import EventLog
+from pmlab_lite.pn import PetriNet
 
 
 class InductiveMiner():
@@ -22,7 +23,7 @@ class InductiveMiner():
 			log.append(red_trace)
 		return log
 
-	def discover(self):
+	def discover(self) -> ProcessTree:
 		return ProcessTree(self, self.log)
 
 	def split_log(self, split: list, cut, log: list):
@@ -93,3 +94,48 @@ class InductiveMiner():
 					log_left.append(left_part)
 
 		return log_left, log_right
+
+	def tree_to_petri_net(self, tree: ProcessTree) -> PetriNet:
+		net = PetriNet()
+		net.add_place(1)
+		# net.add_marking(1, 1)
+
+		def add_region(sub_tree, place_in, place_out):
+
+			if isinstance(sub_tree, ProcessTree):
+				if sub_tree.cut == Cut.PARA:
+					# add additional input place
+					add_region(sub_tree.children[0], place_in, place_out)
+					for child in sub_tree.children[1:]:
+						new_place_in = max(list(net.places.values()))[0] + 1
+						add_region(sub_tree.children[0], new_place_in,
+								   place_out)
+
+				elif sub_tree.cut == Cut.EXCL:
+					pass
+				elif sub_tree.cut == Cut.SEQ:
+					pass
+				elif sub_tree.cut == Cut.LOOP:
+					pass
+				else:
+					next = min(list(net.transitions.values()))[0] - 1
+					net.add_transition(''.join(['sub region', str(next)]))
+					trans = min(list(net.transitions.values()))[0]
+					net.add_edge(place_in, trans)
+					net.add_edge(trans, place_out)
+			else:
+				net.add_transition(sub_tree)
+				trans = min(list(net.transitions.values()))[0]
+				net.add_edge(place_in, trans)
+				net.add_edge(trans, place_out)
+
+
+
+		for child in tree.children:
+			pre_place = max(list(net.places.values()))
+			net.add_place(pre_place + 1)
+			add_region(child, pre_place, pre_place + 1)
+
+
+
+		return net
