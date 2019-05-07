@@ -219,6 +219,14 @@ class PetriNet(AbstractPetriNet):
 			# no input places
 			return False
 
+	def get_inputs(self, transition):
+		edges = filter(lambda x: x[1] == transition, self.edges)
+		return list(list(zip(*edges))[0])
+
+	def get_outputs(self, transition):
+		edges = filter(lambda x: x[0] == transition, self.edges)
+		return list(list(zip(*edges))[1])
+
 	def add_marking(self, place, token=1):
 		"""
 		Add a new marking to the net.
