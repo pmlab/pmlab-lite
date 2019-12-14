@@ -200,6 +200,7 @@ class PetriNet(AbstractPetriNet):
 
 		Retruns:
 			True if transition is enabled, False otherwise.
+			Special case: returning true, when a transition has no input places
 		"""
 
 		# all palces which are predecessor of the given transition
@@ -217,7 +218,7 @@ class PetriNet(AbstractPetriNet):
 			return True
 		else:
 			# no input places
-			return False
+			return True
 
 	def get_inputs(self, transition):
 		edges = filter(lambda x: x[1] == transition, self.edges)
