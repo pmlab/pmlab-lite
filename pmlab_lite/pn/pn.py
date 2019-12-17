@@ -63,6 +63,9 @@ class PetriNet(AbstractPetriNet):
 
 	def get_mapping(self):
 		return self.transitions
+	
+	def get_marking(self):
+		return self.marking
 
 	def add_transition(self, name, id=None):
 		"""
