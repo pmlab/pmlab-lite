@@ -1,9 +1,15 @@
-import setuptools
+import setuptools, pathlib
+
+HERE = pathlib.Path(__file__).parent
+
+README = (HERE / "README.md").read_text()
 
 setuptools.setup(
 	name='pmlab_lite',
-    version='0.1.1',
+    version='0.1.2',
     description='Process Mining scripting environment',
+    long_description=README,
+    long_description_content_type='text/markdown',
 	classifiers=[
 			'Development Status :: 2 - Pre-Alpha',
 			'Programming Language :: Python :: 3'
