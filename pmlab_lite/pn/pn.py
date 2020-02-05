@@ -1,6 +1,7 @@
 from random import randint
 from .abstract_pn import AbstractPetriNet
-import pprint
+import numpy
+import itertools
 
 
 class PetriNet(AbstractPetriNet):
@@ -61,9 +62,12 @@ class PetriNet(AbstractPetriNet):
 
 		return self
 
+	def num_places(self):
+		return len( self.places.keys() )
+
 	def get_mapping(self):
 		return self.transitions
-	
+
 	def get_marking(self):
 		return self.marking
 
@@ -113,8 +117,12 @@ class PetriNet(AbstractPetriNet):
 				break
 
 		return self
+		
+	def num_transitions(self):
+		return sum( [len(v) for v in self.transitions.values()] )
 
 	def add_edge(self, source, target, two_way=False):
+		#could also get one touple as an argument...
 		"""
 		Add a new edge between two elements in the net. If two way argument
 		is True, one edge per direction will be added.
@@ -194,6 +202,15 @@ class PetriNet(AbstractPetriNet):
 			if p == place:
 				return idx
 
+	def transitions_by_index(self):
+		transitions_by_index = dict()
+
+		for key, value in self.transitions.items():
+				for val in value:
+					transitions_by_index[-(val+1)] = key
+
+		return transitions_by_index
+
 	def is_enabled(self, transition):
 		"""
 		Check whether a transition is able to fire or not.
@@ -223,13 +240,19 @@ class PetriNet(AbstractPetriNet):
 			# no input places
 			return True
 
-	def get_inputs(self, transition):
-		edges = filter(lambda x: x[1] == transition, self.edges)
-		return list(list(zip(*edges))[0])
+	def get_inputs(self, node):
+		inputs = []
+		for edge in self.edges:
+			if edge[1] == node:
+				inputs.append(edge[0])
+		return inputs
 
-	def get_outputs(self, transition):
-		edges = filter(lambda x: x[0] == transition, self.edges)
-		return list(list(zip(*edges))[1])
+	def get_outputs(self, node):
+		outputs = []
+		for edge in self.edges:
+			if edge[0] == node:
+				outputs.append(edge[1])
+		return outputs
 
 	def add_marking(self, place, token=1):
 		"""
@@ -355,3 +378,124 @@ class PetriNet(AbstractPetriNet):
 							  self.marking, self.edges)
 
 		return desc
+
+	def get_index_initial_places(self):
+		index_places_start = []
+		for key in self.places.keys():
+			if len(self.get_inputs(self.places[key])) == 0:
+				index_places_start.append(key)
+		return index_places_start
+
+	def get_index_final_places(self):
+		index_places_end = []
+		for key in self.places.keys():
+			if len(self.get_outputs(self.places[key])) == 0:
+				index_places_end.append(key)
+		return index_places_end
+		
+	def incidence_matrix(self):
+		# Creating an empty matrix							  	
+		incidence_matrix = numpy.zeros( ( self.num_places(), self.num_transitions() ), dtype=int)
+        
+		for keyT in self.transitions.keys():
+			for i in range(0, len(self.transitions[keyT]) ):
+				for keyP in self.places.keys():
+					#0 in matrix if theres an arc from P to T and vice versa
+					if ((self.transitions[keyT][i], self.places[keyP]) in self.edges) and ((self.places[keyP], self.transitions[keyT][i]) in self.edges):
+						col_index = list(itertools.chain.from_iterable(list(self.transitions.values()))).index(self.transitions[keyT][i])
+						row_index = keyP
+						incidence_matrix[row_index][col_index] = 0
+					#1 in matrix if arc goes from T to P
+					elif (self.transitions[keyT][i], self.places[keyP]) in self.edges:
+						col_index = list(itertools.chain.from_iterable(list(self.transitions.values()))).index(self.transitions[keyT][i])
+						row_index = keyP
+						incidence_matrix[row_index][col_index] = 1
+					#-1 in matrix if arc goes from P to T
+					elif (self.places[keyP], self.transitions[keyT][i]) in self.edges:
+						col_index = list(itertools.chain.from_iterable(list(self.transitions.values()))).index(self.transitions[keyT][i])
+						row_index = keyP
+						incidence_matrix[row_index][col_index] = -1
+
+		return incidence_matrix
+
+	def synchronous_product(self, trace_net):
+		#self is model_net
+		sp_net = PetriNet()
+		
+
+		#PLACES
+		#copying the model net
+		for p in self.places.values():
+			sp_net.add_place(p)
+			
+		#copying the trace net
+		#adding plus 50 to the traces places names in the sync product so they are unique...
+		for p in trace_net.places.values():
+			sp_net.add_place(p + 50)
+			
+
+		#TRANSITIONS
+		#copying the modelnet
+		model_transitions_by_index = self.transitions_by_index()
+		for i in range(0, len(model_transitions_by_index)):
+			sp_net.add_transition(model_transitions_by_index[i] + "_model")
+		
+		#copying the trace net
+		trace_transitions_by_index = trace_net.transitions_by_index()
+		for i in range(0, len(trace_transitions_by_index)):
+			sp_net.add_transition(trace_transitions_by_index[i] + "_log")
+
+
+		#EDGES	
+		#copying the model net
+		for edge in self.edges:
+			sp_net.add_edge(edge[0], edge[1])
+			
+		# copying the trace net
+		# here also the offset of the transitions from trace_net in the sp_net has to be evaluated, since their index will be shifted to the right by #transitions in model_net
+		transition_offset = len(self.transitions.keys())
+		for edge in trace_net.edges:
+			new_edge = (0,0)
+			if edge[0] > 0:
+				new_edge = (edge[0]+50, edge[1] - transition_offset)
+			elif edge[0] < 0:
+				new_edge = (edge[0] - transition_offset, edge[1]+50)
+			sp_net.add_edge(new_edge[0], new_edge[1])
+		
+		
+		#CREATE NEW SYNCHRONOUS PRODUCT TRANSITIONS AND EDGES
+		#whenever trace_t has the same name as model_t we create a new sync_t with all the in/outputs from the model_ and trace_t combined
+		for keyT1 in trace_net.transitions.keys():
+			for keyT2 in self.transitions.keys():
+				if keyT1 == keyT2:
+					for i in range(0, len(trace_net.transitions[keyT1])):
+						keyT3 = keyT1 + "_synchronous"
+						sp_net.add_transition(keyT3)
+						#copy all the in/outputs from the trace net transitions onto the new sync prod transitions
+						for node in trace_net.get_inputs(trace_net.transitions[keyT1][i]):
+							sp_net.add_edge(node+50, sp_net.transitions[keyT3][i] )
+						for node in trace_net.get_outputs(trace_net.transitions[keyT1][i]):
+							sp_net.add_edge(sp_net.transitions[keyT3][i], node+50)
+						
+						#copy all the in/outputs from the model transitions onto the new sync prod transitions
+						for node in self.get_inputs(self.transitions[keyT2][0]):
+							sp_net.add_edge(node, sp_net.transitions[keyT3][i] )
+						for node in self.get_outputs(self.transitions[keyT2][0]):
+							sp_net.add_edge(sp_net.transitions[keyT3][i], node)
+		
+		return sp_net
+
+### make trace net an own class, derived form abstract pn?
+	def make_trace_net(self, trace):
+		#assume empty PetriNet
+		num_places = len(trace)+1
+
+		for i in range(1, num_places+1):
+			self.add_place(i)
+
+		for t in trace:
+			self.add_transition(t)
+ 
+		for i in range(1, num_places):
+			self.add_edge(i, -i)
+			self.add_edge(-i, i+1)
