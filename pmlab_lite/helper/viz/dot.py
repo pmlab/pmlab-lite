@@ -1,9 +1,10 @@
+import graphviz as gr
 from graphviz import Digraph
-
 from pmlab_lite.discovery.cut import Cut
 from pmlab_lite.discovery.process_tree import ProcessTree
 from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
+from pmlab_lite.pn import PetriNet
 
 
 def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
@@ -51,7 +52,16 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 			 fontname="Helvetica")
 
 	for key, values in input_net.transitions.items():
-		if key != 'tau':
+		if key != 'tau' and not key.endswith("_synchronous"):
+			for t in values:
+				dot.node(str(t), key)
+					
+	# draw sync transitions
+	dot.attr('node', shape='box', penwidth="1", fontsize="10",
+			 fontname="Helvetica", color='green')
+			 
+	for key, values in input_net.transitions.items():
+		if key.endswith("_synchronous"):
 			for t in values:
 				dot.node(str(t), key)
 
@@ -66,7 +76,7 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 
 	# draw place
 	dot.attr('node', shape='circle', penwidth='1', fontsize='10',
-			 fontname='Helvetica', style='unfilled')
+			 fontname='Helvetica', style='unfilled', color='black')
 
 	# draw marking
 	for id, p in input_net.places.items():
@@ -74,10 +84,63 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 		dot.node(str(p), label=label, xlabel=str(p))
 
 	# draw edges
+	#TODO get colored edges for sync prod edges
 	for e in input_net.edges:
 		dot.edge(str(e[0]), str(e[1]))
 
-	render_dot(dot, 'petri_net')  # TODO: change to just return the object
+	render_dot(dot, filename)  # TODO: change to just return the object
+	return dot
+
+def draw_synchronous_product(input_net: AbstractPetriNet, filename="synchronous_product_net", format="pdf"):
+	#drawing model will not recognize double arcs in matrix, as they have entry "0" just like when there's no arc
+	places = list(input_net.places.values())
+	color = ["red", "green", "blue"]
+
+	dot = gr.Digraph(name=filename, format=format)
+	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35",
+			 ranksep="0.25 equally")
+	
+	#draw nodes
+	for i in range(len(places)):
+		dot.node(str(places[i]), shape="circle")
+	
+	#draw transitions	
+	for key, values in input_net.transitions.items():
+		if key.endswith("_model"):
+			for t in values:
+				dot.node( key + "(" + str(t) + ")", shape="rect", style='filled', color=color[0])
+		elif key.endswith("_log"):
+			for t in values:
+				dot.node( key + "(" + str(t) + ")", shape="rect", style='filled', color=color[1])
+		elif key.endswith("_synchronous"):
+			for t in values:
+				dot.node( key + "(" + str(t) + ")", shape="rect", style='filled', color=color[2])
+	
+	#draw edges	
+	for e in input_net.edges:
+		#the origin of the edge is a place
+		if e[0] > 0:
+			for key, values in input_net.transitions.items():
+				for t in values:
+					if e[1] == t:
+						if key.endswith("_synchronous"):
+							dot.edge( str(e[0]), key + "(" + str(e[1]) + ")", color=color[2] )
+						else:
+							dot.edge( str(e[0]), key + "(" + str(e[1]) + ")" )
+		#the goal of the edge is a place
+		elif e[1] > 0:
+			for key, values in input_net.transitions.items():
+				for t in values:
+					if e[0] == t:
+						if key.endswith("_synchronous"):
+							dot.edge( key + "(" + str(e[0]) + ")", str(e[1]), color=color[2] )
+						else:
+							dot.edge( key + "(" + str(e[0]) + ")", str(e[1]) )
+	
+	#f = open("./sync_product.dot", "w")
+	#f.write(dot.source)
+
+	render_dot(dot, filename)  # TODO: change to just return the object
 	return dot
 
 
