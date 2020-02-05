@@ -93,8 +93,8 @@ class A_star(Alignment):
 					self.solutions.append(current_node)
 					self.__Fitness()
 					self.__Move_alignment()
-					self.Move_in_model()
-					self.Move_in_log()
+					self.__Move_in_model()
+					self.__Move_in_log()
 					
 					v.solutions[key] = self.alignment_move
 					
