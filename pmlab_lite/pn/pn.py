@@ -1,6 +1,7 @@
 from random import randint
 from .abstract_pn import AbstractPetriNet
 import numpy
+import pprint
 import itertools
 
 
