@@ -400,10 +400,11 @@ class PetriNet(AbstractPetriNet):
 		transitions_by_index = self.transitions_by_index()
 
 		for t in transitions_by_index:
-			for p in self.places.values():
+			for key in self.places.keys():
 				t_val = -(t+1)			#reverse the index, to be the transitions value again
 				col_index = t
-				row_index = p-1
+				row_index = key
+				p = self.places[key]
 				#edge goes from P to T and vice versaa
 				if ( (t_val, p) in self. edges) and ( (p, t_val) in self. edges): 
 					incidence_matrix[row_index][col_index] = 0
