@@ -2,7 +2,6 @@ from random import randint
 from .abstract_pn import AbstractPetriNet
 import numpy
 import pprint
-import itertools
 
 
 class PetriNet(AbstractPetriNet):
@@ -398,31 +397,31 @@ class PetriNet(AbstractPetriNet):
 		# Creating an empty matrix							  	
 		incidence_matrix = numpy.zeros( ( self.num_places(), self.num_transitions() ), dtype=int)
         
-		for keyT in self.transitions.keys():
-			for i in range(0, len(self.transitions[keyT]) ):
-				for keyP in self.places.keys():
-					#0 in matrix if theres an arc from P to T and vice versa
-					if ((self.transitions[keyT][i], self.places[keyP]) in self.edges) and ((self.places[keyP], self.transitions[keyT][i]) in self.edges):
-						col_index = list(itertools.chain.from_iterable(list(self.transitions.values()))).index(self.transitions[keyT][i])
-						row_index = keyP
-						incidence_matrix[row_index][col_index] = 0
-					#1 in matrix if arc goes from T to P
-					elif (self.transitions[keyT][i], self.places[keyP]) in self.edges:
-						col_index = list(itertools.chain.from_iterable(list(self.transitions.values()))).index(self.transitions[keyT][i])
-						row_index = keyP
-						incidence_matrix[row_index][col_index] = 1
-					#-1 in matrix if arc goes from P to T
-					elif (self.places[keyP], self.transitions[keyT][i]) in self.edges:
-						col_index = list(itertools.chain.from_iterable(list(self.transitions.values()))).index(self.transitions[keyT][i])
-						row_index = keyP
-						incidence_matrix[row_index][col_index] = -1
+		transitions_by_index = self.transitions_by_index()
+
+		for t in transitions_by_index:
+			for p in self.places.values():
+				t_val = -(t+1)			#reverse the index, to be the transitions value again
+				col_index = t
+				row_index = p-1
+				#edge goes from P to T and vice versaa
+				if ( (t_val, p) in self. edges) and ( (p, t_val) in self. edges): 
+					incidence_matrix[row_index][col_index] = 0
+				#edge goes from T to P
+				elif (t_val, p) in self.edges:
+					incidence_matrix[row_index][col_index] = 1
+				#edge goes from P to T
+				elif (p, t_val) in self.edges:
+					incidence_matrix[row_index][col_index] = -1
 
 		return incidence_matrix
 
 	def synchronous_product(self, trace_net):
 		#self is model_net
 		sp_net = PetriNet()
-		
+		place_offset = len(self.places.values())
+		transition_offset = len(self.transitions_by_index())
+
 
 		#PLACES
 		#copying the model net
@@ -430,9 +429,8 @@ class PetriNet(AbstractPetriNet):
 			sp_net.add_place(p)
 			
 		#copying the trace net
-		#adding plus 50 to the traces places names in the sync product so they are unique...
 		for p in trace_net.places.values():
-			sp_net.add_place(p + 50)
+			sp_net.add_place(p + place_offset)
 			
 
 		#TRANSITIONS
@@ -453,14 +451,12 @@ class PetriNet(AbstractPetriNet):
 			sp_net.add_edge(edge[0], edge[1])
 			
 		# copying the trace net
-		# here also the offset of the transitions from trace_net in the sp_net has to be evaluated, since their index will be shifted to the right by #transitions in model_net
-		transition_offset = len(self.transitions.keys())
 		for edge in trace_net.edges:
 			new_edge = (0,0)
 			if edge[0] > 0:
-				new_edge = (edge[0]+50, edge[1] - transition_offset)
+				new_edge = (edge[0]+place_offset, edge[1] - transition_offset)
 			elif edge[0] < 0:
-				new_edge = (edge[0] - transition_offset, edge[1]+50)
+				new_edge = (edge[0] - transition_offset, edge[1]+place_offset)
 			sp_net.add_edge(new_edge[0], new_edge[1])
 		
 		
@@ -474,9 +470,9 @@ class PetriNet(AbstractPetriNet):
 						sp_net.add_transition(keyT3)
 						#copy all the in/outputs from the trace net transitions onto the new sync prod transitions
 						for node in trace_net.get_inputs(trace_net.transitions[keyT1][i]):
-							sp_net.add_edge(node+50, sp_net.transitions[keyT3][i] )
+							sp_net.add_edge(node+place_offset, sp_net.transitions[keyT3][i] )
 						for node in trace_net.get_outputs(trace_net.transitions[keyT1][i]):
-							sp_net.add_edge(sp_net.transitions[keyT3][i], node+50)
+							sp_net.add_edge(sp_net.transitions[keyT3][i], node+place_offset)
 						
 						#copy all the in/outputs from the model transitions onto the new sync prod transitions
 						for node in self.get_inputs(self.transitions[keyT2][0]):
