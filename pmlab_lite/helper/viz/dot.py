@@ -6,6 +6,28 @@ from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
 from pmlab_lite.pn import PetriNet
 
+BLANK = '>>'
+
+def get_marking(marking: int):
+	"""viz import
+	Create label for a place with its corresponding number of tokens.
+
+	:param marking: number of token
+	:return: label
+	"""
+
+	if marking < 4:
+		token = '&#11044;'
+		if marking == 0:
+			return ''
+		elif marking == 1:
+			return '<<B>%s</B>>' % token
+		elif marking == 2:
+			return '<<B>%s %s</B>>' % (token, token)
+		else:
+			return '<<B>%s<BR/>%s %s</B>>' % (token, token, token)
+	else:
+		return '4'
 
 def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 				   format="pdf"):
@@ -21,28 +43,7 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 	Retruns:
 		Digraph object
 	"""
-
-	def get_marking(marking: int):
-		"""viz import
-		Create label for a place with its corresponding number of tokens.
-
-		:param marking: number of token
-		:return: label
-		"""
-
-		if marking < 4:
-			token = '&#11044;'
-			if marking == 0:
-				return ''
-			elif marking == 1:
-				return '<<B>%s</B>>' % token
-			elif marking == 2:
-				return '<<B>%s %s</B>>' % (token, token)
-			else:
-				return '<<B>%s<BR/>%s %s</B>>' % (token, token, token)
-		else:
-			return '4'
-
+	
 	dot = Digraph(name=filename, format=format)
 	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35",
 			 ranksep="0.25 equally")
@@ -92,51 +93,42 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 	return dot
 
 def draw_synchronous_product(input_net: AbstractPetriNet, filename="synchronous_product_net", format="pdf"):
-	#drawing model will not recognize double arcs in matrix, as they have entry "0" just like when there's no arc
-	places = list(input_net.places.values())
-	color = ["red", "green", "blue"]
+	color = ["black", "chartreuse3", "yellow1"]
+	transitions_by_index = input_net.transitions_by_index()
 
 	dot = gr.Digraph(name=filename, format=format)
-	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35",
-			 ranksep="0.25 equally")
-	
-	#draw nodes
-	for i in range(len(places)):
-		dot.node(str(places[i]), shape="circle")
-	
+	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35", ranksep="0.25 equally" )
+
+	#draw places
+	for id, p in input_net.places.items():
+		label = get_marking(input_net.marking[id])
+		dot.node(str(p), label=label, xlabel=str(p), shape="circle")
+
 	#draw transitions	
-	for key, values in input_net.transitions.items():
-		if key.endswith("_model"):
-			for t in values:
-				dot.node( key + "(" + str(t) + ")", shape="rect", style='filled', color=color[0])
-		elif key.endswith("_log"):
-			for t in values:
-				dot.node( key + "(" + str(t) + ")", shape="rect", style='filled', color=color[1])
-		elif key.endswith("_synchronous"):
-			for t in values:
-				dot.node( key + "(" + str(t) + ")", shape="rect", style='filled', color=color[2])
-	
-	#draw edges	
+	for i in range(0,len(transitions_by_index)):
+		if transitions_by_index[i].endswith("_model"):
+			dot.node( str(-(i+1)), "(" + transitions_by_index[i][:-6] + "," + BLANK + ")",shape="rect", style='unfilled', color=color[0])
+		elif transitions_by_index[i].endswith("_log"):
+			dot.node( str(-(i+1)), "(" + BLANK + "," + transitions_by_index[i][:-4] + ")", shape="rect", style='filled')
+		elif transitions_by_index[i].endswith("_synchronous"):
+			dot.node( str(-(i+1)), "(" + transitions_by_index[i][:-12] + "," + transitions_by_index[i][:-12] + ")", shape="rect", style='filled', color=color[1])
+
+
+	#draw edges
 	for e in input_net.edges:
-		#the origin of the edge is a place
-		if e[0] > 0:
-			for key, values in input_net.transitions.items():
-				for t in values:
-					if e[1] == t:
-						if key.endswith("_synchronous"):
-							dot.edge( str(e[0]), key + "(" + str(e[1]) + ")", color=color[2] )
-						else:
-							dot.edge( str(e[0]), key + "(" + str(e[1]) + ")" )
-		#the goal of the edge is a place
-		elif e[1] > 0:
-			for key, values in input_net.transitions.items():
-				for t in values:
-					if e[0] == t:
-						if key.endswith("_synchronous"):
-							dot.edge( key + "(" + str(e[0]) + ")", str(e[1]), color=color[2] )
-						else:
-							dot.edge( key + "(" + str(e[0]) + ")", str(e[1]) )
-	
+	#the edge is coming from a transition
+		if e[0] < 0:
+			if transitions_by_index[-(e[0]+1)].endswith("_synchronous"):
+				dot.edge( str(e[0]), str(e[1]), color=color[1] )
+			else:
+				dot.edge( str(e[0]), str(e[1]) )
+	#the edge is going to a transition
+		else:
+			if transitions_by_index[-(e[1]+1)].endswith("_synchronous"):
+				 dot.edge( str(e[0]), str(e[1]), color=color[1] )
+			else:
+				dot.edge( str(e[0]), str(e[1]) )
+
 	#f = open("./sync_product.dot", "w")
 	#f.write(dot.source)
 
