@@ -94,8 +94,8 @@ class A_star(Alignment):
 					self.solutions.append(current_node)
 					self.__Fitness()
 					self.__Move_alignment()
-					self.Move_in_model()
-					self.Move_in_log()
+					self.__Move_in_model()
+					self.__Move_in_log()
 					
 					v.solutions[key] = self.alignment_move
 					
@@ -116,12 +116,12 @@ class A_star(Alignment):
 			u = sol.alignment_up_to
 			self.alignment_move.append( [e for e in u if ('tau' not in e[1])] )
 		
-	def Move_in_model(self):
+	def __Move_in_model(self):
 		for sol in self.solutions:
 			u = sol.alignment_up_to
 			self.move_in_model.append( [e[1] for e in u if (e[1]!=BLANK and ('tau' not in e[1]))] )  
 		
-	def Move_in_log(self):
+	def __Move_in_log(self):
 		for sol in self.solutions:
 			u = sol.alignment_up_to
 			self.move_in_log.append( [e[0] for e in u if e[0] != BLANK])								
