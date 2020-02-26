@@ -6,3 +6,4 @@ solutions=[]
 incidence_matrix = []
 init_mark_vector = []
 final_mark_vector = []
+transitions_by_index = dict()
