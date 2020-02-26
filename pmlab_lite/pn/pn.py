@@ -1,7 +1,6 @@
 from random import randint
 from .abstract_pn import AbstractPetriNet
 import numpy
-import pprint
 
 
 class PetriNet(AbstractPetriNet):
@@ -216,7 +215,7 @@ class PetriNet(AbstractPetriNet):
 		Check whether a transition is able to fire or not.
 
 		Args:
-			transition: string name of transition
+			transition: value (negative number) of transition
 
 		Retruns:
 			True if transition is enabled, False otherwise.
@@ -224,13 +223,13 @@ class PetriNet(AbstractPetriNet):
 		"""
 
 		# all palces which are predecessor of the given transition
-		input_places = list(filter(lambda x: x[1] == transition, self.edges))
+		inputs = self.get_inputs(transition)
 		# do any inputs exist?
-		if len(input_places) > 0:
+		if len(inputs) > 0:
 			# check if each place contains at least one token aka. has a
 			# marking
-			for place in input_places:
-				idx = self.index_of_place(place[0])
+			for i in inputs:
+				idx = self.index_of_place(i)
 				# input place has no token
 				if self.marking[idx] == 0:
 					return False
@@ -241,6 +240,11 @@ class PetriNet(AbstractPetriNet):
 			return True
 
 	def get_inputs(self, node):
+		"""
+		args: node, positive number for place, negative number for transition
+
+		returns: list of numbers, positives when node is a transition and negatives when node is a place
+		"""
 		inputs = []
 		for edge in self.edges:
 			if edge[1] == node:
@@ -248,6 +252,11 @@ class PetriNet(AbstractPetriNet):
 		return inputs
 
 	def get_outputs(self, node):
+		"""
+		args: node, positive number for place, negative number for transition
+
+		returns: list of numbers, positives when node is a transition and negatives when node is a place
+		"""
 		outputs = []
 		for edge in self.edges:
 			if edge[0] == node:
@@ -277,6 +286,10 @@ class PetriNet(AbstractPetriNet):
 			raise ValueError('place does not exist.')
 
 		return self
+
+	def null_marking(self):
+		for i in range(0, len(self.marking)):
+			self.marking[i] = 0
 
 	def replay(self, max_length):
 		"""Randomly replay the net starting from its current marking.
@@ -346,23 +359,22 @@ class PetriNet(AbstractPetriNet):
 		Args:
 			name: string name of transition
 		"""
-		inputs = [item[0] for item in
-				  list(filter(lambda x: x[1] == transition,
-							  self.edges))]
+		if self.is_enabled(transition):
+			inputs = self.get_inputs(transition)
 
-		outputs = [item[1] for item in
-				   list(filter(lambda x: x[0] == transition,
-							   self.edges))]
+			outputs = self.get_outputs(transition)
 
-		# update ingoing token
-		for i in inputs:
-			idx = self.index_of_place(i)
-			self.marking[idx] -= 1
+			# update ingoing token
+			for i in inputs:
+				idx = self.index_of_place(i)
+				self.marking[idx] -= 1
 
-		# update outgoing token
-		for o in outputs:
-			idx = self.index_of_place(o)
-			self.marking[idx] += 1
+			# update outgoing token
+			for o in outputs:
+				idx = self.index_of_place(o)
+				self.marking[idx] += 1
+		else:
+			print("Transition is not enabled!")
 
 	def __repr__(self):
 		"""
@@ -392,7 +404,7 @@ class PetriNet(AbstractPetriNet):
 			if len(self.get_outputs(self.places[key])) == 0:
 				index_places_end.append(key)
 		return index_places_end
-		
+
 	def incidence_matrix(self):
 		# Creating an empty matrix							  	
 		incidence_matrix = numpy.zeros( ( self.num_places(), self.num_transitions() ), dtype=int)
@@ -401,7 +413,7 @@ class PetriNet(AbstractPetriNet):
 
 		for t in transitions_by_index:
 			for key in self.places.keys():
-				t_val = -(t+1)			#reverse the index, to be the transitions value again
+				t_val = -(t+1)					#reverse the index, to be the transtions value again
 				col_index = t
 				row_index = key
 				p = self.places[key]
@@ -417,18 +429,18 @@ class PetriNet(AbstractPetriNet):
 
 		return incidence_matrix
 
+	#TODO clunky -> more easy sync transitions with transitions_by_index()
 	def synchronous_product(self, trace_net):
 		#self is model_net
 		sp_net = PetriNet()
 		place_offset = len(self.places.values())
 		transition_offset = len(self.transitions_by_index())
 
-
 		#PLACES
 		#copying the model net
 		for p in self.places.values():
 			sp_net.add_place(p)
-			
+
 		#copying the trace net
 		for p in trace_net.places.values():
 			sp_net.add_place(p + place_offset)
@@ -470,14 +482,18 @@ class PetriNet(AbstractPetriNet):
 						keyT3 = keyT1 + "_synchronous"
 						sp_net.add_transition(keyT3)
 						#copy all the in/outputs from the trace net transitions onto the new sync prod transitions
+						#inputs
 						for node in trace_net.get_inputs(trace_net.transitions[keyT1][i]):
 							sp_net.add_edge(node+place_offset, sp_net.transitions[keyT3][i] )
+						#outputs
 						for node in trace_net.get_outputs(trace_net.transitions[keyT1][i]):
 							sp_net.add_edge(sp_net.transitions[keyT3][i], node+place_offset)
 						
 						#copy all the in/outputs from the model transitions onto the new sync prod transitions
+						#inputs
 						for node in self.get_inputs(self.transitions[keyT2][0]):
 							sp_net.add_edge(node, sp_net.transitions[keyT3][i] )
+						#outpus
 						for node in self.get_outputs(self.transitions[keyT2][0]):
 							sp_net.add_edge(sp_net.transitions[keyT3][i], node)
 		
