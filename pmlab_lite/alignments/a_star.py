@@ -228,6 +228,8 @@ class Node():
 				open_list.append( [self.total_cost, self] )
 
 	def Cost_from_init(self):
+		#base_cost = 1 + EPSILON
+		#add base cost into initial cost calculation
 		self.cost_from_init_marking = 1 * sum( [0 if ((x[0]!=BLANK and x[1]!=BLANK) or ('tau' in x[1])) else 1 for x in self.alignment_up_to] )
 
 	#calcucalte the remaining cost to the final marking,based on a heuristic
@@ -252,7 +254,7 @@ class Heuristic():
 			self.linear_programming_heursitic(node)
 	
 	def remaining_trace_length_heursitic(self, node):
-		node.cost_to_final_marking = len(node.observed_trace_remain)
+		node.cost_to_final_marking = len(node.observed_trace_remain) #*EPSILON
 
 	def linear_programming_heursitic(self, node):
 		#Heuristic.heurisitic_to_final()
