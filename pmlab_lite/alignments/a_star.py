@@ -259,7 +259,13 @@ class Heuristic():
 	def linear_programming_heursitic(self, node):
 		#Heuristic.heurisitic_to_final()
 		b = numpy.array(v.final_mark_vector) - numpy.array(node.marking_vector) 
-		x = numpy.linalg.lstsq(v.incidence_matrix, b, rcond=-1)[0]
+		x = numpy.linalg.lstsq(v.incidence_matrix, b, rcond=None)[0]
+		
+		# important note: with rcond=None, the the results in costs calculated my vary on different machines
+		# on three machines tested the unrounded sum of each x was mostly equal, differences occured in +-10 digits after comma
+		# after rounding up or down though, differences where bigger on each machine (e.g. machine1 rounds -0.000001 to 0
+		# 			and machine2 rounds 0.00000001 to 1 -> making the sums differ in multiples of 1
+		#with rcond=-1 the same results have been calculated on each machine
 		
 		#rounding up or down, 
 		x[x > 0] = 1
