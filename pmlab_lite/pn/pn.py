@@ -405,6 +405,26 @@ class PetriNet(AbstractPetriNet):
 			if len(self.get_outputs(self.places[key])) == 0:
 				index_places_end.append(key)
 		return index_places_end
+	
+	def get_spnets_initial_marking(self):
+		#only works for nets with 2 start places so far (assuming sp-nets)
+		index_start_places = self.get_index_initial_places()
+		index_place_start = index_start_places[0]
+		index_place_start_log = index_start_places[1]
+		init_mark_vector = list (numpy.repeat(0, len(self.places)))
+		init_mark_vector[index_place_start] = 1
+		init_mark_vector[index_place_start_log] = 1
+		return init_mark_vector
+	
+	def get_spnets_final_marking(self):
+		#only works for nets with 2 end places so far (assuming sp-nets)
+		index_final_places = self.get_index_final_places() 
+		index_place_end = index_final_places[0]
+		index_place_end_log = index_final_places[1]	
+		final_mark_vector = list (numpy.repeat(0, len(self.places)))
+		final_mark_vector[index_place_end] = 1
+		final_mark_vector[index_place_end_log] = 1
+		return final_mark_vector
 
 	def incidence_matrix(self):
 		# Creating an empty matrix							  	
