@@ -176,7 +176,7 @@ def draw_a_star_search_space(alignment, filename="search_space", format="pdf"):
         #very first nodes parent node is " '' "
         if node[1].parent_node != '':
             parent_node = node[1].parent_node
-            dot.edge(str(parent_node.marking_vector), str(node[1].marking_vector), label=str(node[1].number) + ' ' + node[1].predecessor[0])
+            dot.edge(str(parent_node.marking_vector), str(node[1].marking_vector), label=str(node[1].number))
 
     render_dot(dot,filename)
     return dot
