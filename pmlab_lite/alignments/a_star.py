@@ -10,14 +10,12 @@ BLANK = '>>'
 EPSILON = 0.00001
 
 
-def Marking_vector(length, index_place, index_place_log):
-	#creating a mark vector, of length = #places and fill unmarked 
-	mark_vector =  list( numpy.repeat(0, length) )
-	#marking the specified places in model/log
-	mark_vector[index_place] = 1
-	mark_vector[index_place_log] = 1
-	
-	return mark_vector
+def store_variables(incidence_matrix, init_mark_vector, final_mark_vector, transitions_by_index):
+	v.incidence_matrix = incidence_matrix
+	v.init_mark_vector = init_mark_vector
+	v.final_mark_vector = final_mark_vector
+	v.transitions_by_index = transitions_by_index
+	v.solutions = []
 
 
 class A_star(Alignment):
@@ -27,82 +25,49 @@ class A_star(Alignment):
 		self.solutions = []
 		
 	#a star algorithm
-	def A_star_exe(self, model_net, total_trace, heuristic_variant="lp", no_of_solutions=1):
-		
-		v.solutions = dict() 
+	def A_star_exe(self, synchronous_product, trace, heuristic_variant="lp", no_of_solutions=1):
+		v.open_list = open_list = []
+		v.closed_list = closed_list = []
 
 		heuristic = Heuristic(heuristic_variant)
+		incidence_matrix = synchronous_product.incidence_matrix()
+		transitions_by_index = synchronous_product.transitions_by_index()
+		init_mark_vector = synchronous_product.get_spnets_initial_marking() 
+		final_mark_vector = synchronous_product.get_spnets_final_marking()
+			
+		store_variables(incidence_matrix, init_mark_vector, final_mark_vector, transitions_by_index)
+			
+		#creating the initial node in the search space
+		current_node = Node()
+		current_node.Make_initial_node(trace, heuristic)
+		open_list.append( [current_node.total_cost, current_node] )
 		
-		for key in tqdm.tqdm(total_trace):
-			trace = total_trace[key]				 # = ['t1', 't2', 't3']
-			
-			trace_net = PetriNet()
-			trace_net.make_trace_net(trace)		
-			
-			sp_net = model_net.synchronous_product(trace_net)
-			incidence_matrix = sp_net.incidence_matrix()
-			places = list( sp_net.places.values() )
-			transitions_by_index = sp_net.transitions_by_index()
-			
-			index_start_places = sp_net.get_index_initial_places()
-			index_final_places = sp_net.get_index_final_places()
-			index_place_start = index_start_places[0]
-			index_place_end = index_final_places[0]
-			index_place_start_log = index_start_places[1]
-			index_place_end_log = index_final_places[1]	
-			
-			#creating inital marking vector
-			init_mark_vector = Marking_vector(len(places), index_place_start, index_place_start_log)
-			
-			#creating final marking vector 
-			final_mark_vector = Marking_vector(len(places), index_place_end, index_place_end_log)
-			
-			#storing the specifications of the Synchronous Product
-			v.incidence_matrix = incidence_matrix
-			v.init_mark_vector = init_mark_vector
-			v.final_mark_vector = final_mark_vector
-			v.transitions_by_index = transitions_by_index
-			
-			#--initializing variables
-			v.closed_list = closed_list = []
-			v.open_list = open_list = []
-			self.solutions = []
-			self.fitness = []
-			self.alignment_move = []
-			self.move_in_model = []
-			self.move_in_log = []
-			self.fitness = []
-			
-			#creating the initial node in the search space
-			current_node = Node()
-			current_node.marking_vector = numpy.array(init_mark_vector[:])
-			current_node.observed_trace_remain = trace    
-			current_node.Cost_to_final(heuristic)
-			open_list.append( [current_node.total_cost, current_node] )
-			
-			#iterating until open_list has no elements
-			while len(open_list) > 0:
-				# build min heap from open list
-				heapq.heapify(open_list)					
+		#number for drawing the search space in order
+		count = 0
+		#iterating until open_list has no elements
+		while len(open_list) > 0:
+			# build min heap from open list
+			heapq.heapify(open_list)					
 
-				current_node = heapq.heappop(v.open_list)	#pop cheapest node from open list as (total cost, node)
-				closed_list.append(current_node)			#append it to closed list as (total cost, node)
-				current_node = current_node[1]				#make the current node just the node of the tuple
-				
-				#checking whether the node is a solution. else: investigate
-				if( numpy.array_equal( current_node.marking_vector, final_mark_vector) ):
-					self.solutions.append(current_node)
-					self.__Fitness()
-					self.__Move_alignment()
-					self.__Move_in_model()
-					self.__Move_in_log()
+			current_node = heapq.heappop(v.open_list)	#pop cheapest node from open list as (total cost, node)
+			closed_list.append(current_node)		#append it to closed list as (total cost, node)
+			current_node = current_node[1]			#make the current node just the node of the tuple
+			current_node.number = count
+			
+			#checking whether the node is a solution. else: investigate
+			if( numpy.array_equal( current_node.marking_vector, final_mark_vector) ):
+				self.solutions.append(current_node)
+				self.__Fitness()
+				self.__Move_alignment()
+				self.__Move_in_model()
+				self.__Move_in_log()
 					
-					v.solutions[key] = self.alignment_move
+				v.solutions[key] = self.alignment_move
 					
-					if len(self.solutions) >= no_of_solutions:
-						break
-				else:
-					current_node.Investigate(incidence_matrix, transitions_by_index, heuristic)
+				if len(self.solutions) >= no_of_solutions:
+					break
+			else:
+				current_node.Investigate(incidence_matrix, transitions_by_index, heuristic)
 						
 		return v.solutions
 	
@@ -240,6 +205,12 @@ class Node():
 		self.Cost_from_init()
 		self.Cost_to_final(heuristic)	
 		self.total_cost = self.cost_from_init_marking + self.cost_to_final_marking
+		
+	def Make_initial_node(self, trace, heuristic):
+		self.marking_vector = v.init_mark_vector
+		self.observed_trace_remain = trace    
+		self.Cost_to_final(heuristic)
+		return self
 
 
 class Heuristic():
