@@ -57,18 +57,19 @@ class A_star(Alignment):
 			#checking whether the node is a solution. else: investigate
 			if( numpy.array_equal( current_node.marking_vector, final_mark_vector) ):
 				self.solutions.append(current_node)
-				self.__Fitness()
-				self.__Move_alignment()
-				self.__Move_in_model()
-				self.__Move_in_log()
-					
-				v.solutions[key] = self.alignment_move
+				v.solutions.append(self.alignment_move)
 					
 				if len(self.solutions) >= no_of_solutions:
 					break
 			else:
 				current_node.Investigate(incidence_matrix, transitions_by_index, heuristic)
-						
+				count += 1
+		
+		self.closed_list_end = closed_list
+		self.__Fitness()
+		self.__Move_alignment()
+		self.__Move_in_model()
+		self.__Move_in_log()
 		return v.solutions
 	
 	def __Fitness(self):
@@ -95,14 +96,14 @@ class A_star(Alignment):
 class Node():	
 	def __init__(self):
 		#shows a marking node
+		self.number = 0
 		self.marking_vector = []
 		self.active_transitions = []
 		self.parent_node = ''
 		self.observed_trace_remain = []
 		self.alignment_up_to = []			#it's of the form [ (t1,t1), (t2,-), (-,t3), ... ]
 		
-		self.cost_from_init_marking = 0 
-		self.Cost_from_init()
+		self.cost_from_init_marking = 1 * sum( [0 if ((x[0]!=BLANK and x[1]!=BLANK) or ('tau' in x[1])) else 1 for x in self.alignment_up_to] )
 		self.cost_to_final_marking = 1000
 		self.total_cost = self.cost_from_init_marking + self.cost_to_final_marking
 	
@@ -116,15 +117,11 @@ class Node():
 		:param incidence_matrix: matrix of the synchronous product
 		:param transitions by index: reverse of the dict 'net.transitions', to access transitions names by index
 		'''
-		
-		self.Cost_to_final(heuristic) 
 
 		self.Find_active_transitions(incidence_matrix)
 
 		#heuristic evaluation of active transitions
 		for i in self.active_transitions:
-			move = str()
-
 			#make child node and update it's marking, i.e. the current marking after transition i was fired
 			child_node = Node()
 			child_node.marking_vector = incidence_matrix[:, i] + self.marking_vector
@@ -136,7 +133,6 @@ class Node():
 				#update it's remaining trace
 				child_node.observed_trace_remain = self.observed_trace_remain[1:]
 				child_node.alignment_up_to = self.alignment_up_to +  [ (self.observed_trace_remain[0], transitions_by_index[i][:-12] ) ]
-				move = ",synchronous move,"
 				
 			# --Model       move--
 			elif transitions_by_index[i].endswith("model"):
@@ -144,7 +140,6 @@ class Node():
 				#update it's remaining trace
 				child_node.observed_trace_remain = self.observed_trace_remain[:]
 				child_node.alignment_up_to = self.alignment_up_to + [ (BLANK, transitions_by_index[i][:-6] ) ]
-				move = ",move in model,"
 					
 			# --Log         move--
 			elif transitions_by_index[i].endswith("log"):
@@ -152,7 +147,6 @@ class Node():
 				#update it's remaining trace
 				child_node.observed_trace_remain = self.observed_trace_remain[1:]
 				child_node.alignment_up_to = self.alignment_up_to + [ (self.observed_trace_remain[0], BLANK) ]
-				move = ",move in log,"
 
 			#update the child nodes costs
 			child_node.Update_costs(heuristic)
