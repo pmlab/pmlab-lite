@@ -2,9 +2,7 @@ from pmlab_lite.pn import PetriNet
 from .alignment import Alignment
 from . import variables as v
 import numpy
-import tqdm
 import heapq
-import tqdm
 
 BLANK = '>>' 
 EPSILON = 0.00001
