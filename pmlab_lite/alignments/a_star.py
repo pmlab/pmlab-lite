@@ -75,22 +75,22 @@ class A_star(Alignment):
 	def __Fitness(self):
 		for sol in self.solutions:
 			u = sol.alignment_up_to
-			self.fitness.append( round ( len( [e for e in u if ((e[0]!=BLANK and e[1]!=BLANK) or ('tau' in e[1])) ]) / len(u), 3) )
+			self.fitness.append( round ( len( [e for e in u if ((e[0]!=BLANK and e[1]!=BLANK) or ('tau' in e[0])) ]) / len(u), 3) )
 		
 	def __Move_alignment(self):
 		for sol in self.solutions:
 			u = sol.alignment_up_to
-			self.alignment_move.append( [e for e in u if ('tau' not in e[1])] )
+			self.alignment_move.append( [e for e in u if ('tau' not in e[0])] )
 		
 	def __Move_in_model(self):
 		for sol in self.solutions:
 			u = sol.alignment_up_to
-			self.move_in_model.append( [e[1] for e in u if (e[1]!=BLANK and ('tau' not in e[1]))] )  
+			self.move_in_model.append( [e[0] for e in u if (e[0]!=BLANK and ('tau' not in e[0]))] )  
 		
 	def __Move_in_log(self):
 		for sol in self.solutions:
 			u = sol.alignment_up_to
-			self.move_in_log.append( [e[0] for e in u if e[0] != BLANK])								
+			self.move_in_log.append( [e[1] for e in u if e[1] != BLANK])								
 
 
 class Node():	
@@ -103,7 +103,7 @@ class Node():
 		self.observed_trace_remain = []
 		self.alignment_up_to = []			#it's of the form [ (t1,t1), (t2,-), (-,t3), ... ]
 		
-		self.cost_from_init_marking = 1 * sum( [0 if ((x[0]!=BLANK and x[1]!=BLANK) or ('tau' in x[1])) else 1 for x in self.alignment_up_to] )
+		self.cost_from_init_marking = 1 * sum( [EPSILON if ((x[0]!=BLANK and x[1]!=BLANK) or ('tau' in x[0])) else 1 for x in self.alignment_up_to] )
 		self.cost_to_final_marking = 1000
 		self.total_cost = self.cost_from_init_marking + self.cost_to_final_marking
 	
@@ -132,27 +132,27 @@ class Node():
 				
 				#update it's remaining trace
 				child_node.observed_trace_remain = self.observed_trace_remain[1:]
-				child_node.alignment_up_to = self.alignment_up_to +  [ (self.observed_trace_remain[0], transitions_by_index[i][:-12] ) ]
+				child_node.alignment_up_to = self.alignment_up_to + [ (transitions_by_index[i][:-12], transitions_by_index[i][:-12] ) ]
 				
 			# --Model       move--
 			elif transitions_by_index[i].endswith("model"):
 				
 				#update it's remaining trace
 				child_node.observed_trace_remain = self.observed_trace_remain[:]
-				child_node.alignment_up_to = self.alignment_up_to + [ (BLANK, transitions_by_index[i][:-6] ) ]
+				child_node.alignment_up_to = self.alignment_up_to + [ ( transitions_by_index[i][:-6], BLANK ) ]
 					
 			# --Log         move--
 			elif transitions_by_index[i].endswith("log"):
 
 				#update it's remaining trace
 				child_node.observed_trace_remain = self.observed_trace_remain[1:]
-				child_node.alignment_up_to = self.alignment_up_to + [ (self.observed_trace_remain[0], BLANK) ]
+				child_node.alignment_up_to = self.alignment_up_to + [ (BLANK, transitions_by_index[i][:-4] ) ]
 
 			#update the child nodes costs
 			child_node.Update_costs(heuristic)
 	
 			#check whether it's in the closed list or it's a cheaper version of same marking
-			child_node.Add_node(v.open_list, v.closed_list, move)
+			child_node.Add_node(v.open_list, v.closed_list)
 			
 	def Find_active_transitions(self, incidence_matrix):
 		#looping over transitions of the synchronous product, to see which are active, given the marking of that node
@@ -189,7 +189,7 @@ class Node():
 	def Cost_from_init(self):
 		#base_cost = 1 + EPSILON
 		#add base cost into initial cost calculation
-		self.cost_from_init_marking = 1 * sum( [0 if ((x[0]!=BLANK and x[1]!=BLANK) or ('tau' in x[1])) else 1 for x in self.alignment_up_to] )
+		self.cost_from_init_marking = 1 * sum( [EPSILON if ((x[0]!=BLANK and x[1]!=BLANK) or ('tau' in x[0])) else 1 for x in self.alignment_up_to] )
 
 	#calcucalte the remaining cost to the final marking,based on a heuristic
 	def Cost_to_final(self, heuristic):
@@ -219,7 +219,7 @@ class Heuristic():
 			self.linear_programming_heursitic(node)
 	
 	def remaining_trace_length_heursitic(self, node):
-		node.cost_to_final_marking = len(node.observed_trace_remain) #*EPSILON
+		node.cost_to_final_marking = len(node.observed_trace_remain) * EPSILON
 
 	def linear_programming_heursitic(self, node):
 		#Heuristic.heurisitic_to_final()
