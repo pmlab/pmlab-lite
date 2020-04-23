@@ -166,7 +166,7 @@ def draw_a_star_search_space(alignment, filename="search_space", format="pdf"):
                 color=colors[0])
         #any other node
         else:
-            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)) +"\n" + str(e[1].active_transitions), 
+            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)), 
                 color=colors[2]+str(counter), fontcolor=fontcolor)
         if counter > 0:
             counter -= 1
