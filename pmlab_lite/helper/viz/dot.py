@@ -135,6 +135,52 @@ def draw_synchronous_product(input_net: AbstractPetriNet, filename="synchronous_
 	render_dot(dot, filename)  # TODO: change to just return the object
 	return dot
 
+def draw_a_star_search_space(alignment, filename="search_space", format="pdf"):
+    closed_list = alignment.closed_lists_end
+    initial_mark_vector = closed_list[0][1].marking_vector
+    final_mark_vector = alignment.solutions[0].marking_vector
+    colors = ["indianred2", "darkseagreen", "gray"]
+    counter = 100
+
+    dot = Digraph(name=filename, format=format)
+    dot.attr(rankdir='LR', fontsize="3", nodesep="0.35",
+			 ranksep="0.25 equally")
+    
+    #draw nodes
+    dot.attr('node', shape='circle', penwidth='1', fontsize='12',
+			 fontname='Helvetica', style='filled')
+    fontcolor = 'black'
+    changed_fontcolor = False
+    for e in closed_list:
+        #change color for darker nodes
+        if not changed_fontcolor and counter < 30:
+            changed_fontcolor = True
+            fontcolor = 'white'
+        #node is the final marking
+        if ( np.array_equal(e[1].marking_vector, final_mark_vector) ):
+            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)), 
+                color=colors[1])
+        #node is the initial marking
+        elif ( np.array_equal(e[1].marking_vector, initial_mark_vector) ):
+            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)),
+                color=colors[0])
+        #any other node
+        else:
+            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)) +"\n" + str(e[1].active_transitions), 
+                color=colors[2]+str(counter), fontcolor=fontcolor)
+        if counter > 0:
+            counter -= 1
+
+    #draw edges
+    for node in closed_list:
+        #very first nodes parent node is " '' "
+        if node[1].parent_node != '':
+            parent_node = node[1].parent_node
+            dot.edge(str(parent_node.marking_vector), str(node[1].marking_vector), label=str(node[1].number) + ' ' + node[1].predecessor[0])
+
+    render_dot(dot,filename)
+    return dot
+
 
 def draw_graph(graph: Graph, filename="graph", format="pdf", render=False,
 			   view=True):
