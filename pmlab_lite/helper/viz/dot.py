@@ -136,7 +136,7 @@ def draw_synchronous_product(input_net: AbstractPetriNet, filename="synchronous_
 	return dot
 
 def draw_a_star_search_space(alignment, filename="search_space", format="pdf"):
-    closed_list = alignment.closed_lists_end
+    closed_list = alignment.closed_list_end
     initial_mark_vector = closed_list[0][1].marking_vector
     final_mark_vector = alignment.solutions[0].marking_vector
     colors = ["indianred2", "darkseagreen", "gray"]
