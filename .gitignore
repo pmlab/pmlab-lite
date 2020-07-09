@@ -10,3 +10,6 @@
 # directories
 __pycache__/
 .idea
+build/
+dist/
+pmlab_lite.egg-info/
