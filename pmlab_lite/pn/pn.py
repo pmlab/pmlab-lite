@@ -1,13 +1,13 @@
+from . abstract_pn import AbstractPetriNet
 from random import randint
-from .abstract_pn import AbstractPetriNet
-import numpy
 import pprint
+import numpy as np
 
 
 class PetriNet(AbstractPetriNet):
 	""" Class to represent a Petri Net."""
 
-	def add_place(self, name: int, capacity: int=1):
+	def add_place(self, place_name: int, capacity: int=1):
 		"""
 		Add a place to the net and set its token capacity. The name
 		has to be numeric. Further, the keys are indices of the corresponding
@@ -21,10 +21,10 @@ class PetriNet(AbstractPetriNet):
 			ValueError: place identifier has to be unique
 			TypeError: place identifier has to be numeric
 		"""
-		if isinstance(name, int) and name > 0:
-			if not self.place_exists(name):
+		if isinstance(place_name, int) and place_name > 0:
+			if not self.place_exists(place_name):
 				idx = len(self.places)
-				self.places[idx] = name
+				self.places[idx] = place_name
 				self.marking.append(0)
 				self.capacity.append(capacity)
 			else:
@@ -34,7 +34,7 @@ class PetriNet(AbstractPetriNet):
 
 		return self
 
-	def remove_place(self, name: int): 
+	def remove_place(self, place_name: int): 
 		"""
 		Remove a place from the net.
 
@@ -44,7 +44,7 @@ class PetriNet(AbstractPetriNet):
 		index = 0   #!!!if name not in places -> index stays 0 and first place gets removed..
 
 		for idx, place in self.places.items():
-			if place == name:
+			if place == place_name:
 				index = idx
 				break
 
@@ -71,7 +71,7 @@ class PetriNet(AbstractPetriNet):
 	def get_marking(self) -> list:
 		return self.marking
 
-	def add_transition(self, name: str, id: int=None):
+	def add_transition(self, name: str, transition_id: int=None):
 		"""
 		Add a transition to the net. The name has to be a string.
 		Adding the same name multiple times will append to the list which the name(key) points to.
@@ -86,16 +86,16 @@ class PetriNet(AbstractPetriNet):
 		if len(name) == 0:
 			name = 'tau'
 
-		if id is None:
-			id = self.counter
+		if transition_id is None:
+			transition_id = self.counter
 		else:
-			if id >= 0:
+			if transition_id >= 0:
 				raise ValueError('transition identifier has to be < 0')
 
 		if name in self.transitions.keys():
-			self.transitions[name].append(id)
+			self.transitions[name].append(transition_id)
 		else:
-			self.transitions[name] = [id]
+			self.transitions[name] = [transition_id]
 
 		return self
 
@@ -108,8 +108,8 @@ class PetriNet(AbstractPetriNet):
 		"""
 
 		for key, values in self.transitions.items():
-			if name in values:
-				values.remove(name)
+			if id in values:
+				values.remove(id)
 				if len(values) == 0:
 					self.transitions.pop(key, None)
 				break
@@ -197,7 +197,7 @@ class PetriNet(AbstractPetriNet):
 
 	def index_of_place(self, place_name: int) -> int:
 		for idx, p in self.places.items():
-			if p == place:
+			if p == place_name:
 				return idx
 
 	def transitions_by_index(self) -> dict:
@@ -227,7 +227,7 @@ class PetriNet(AbstractPetriNet):
 		"""
 
 		# all palces which are predecessor of the given transition
-		inputs = self.get_inputs(transition)
+		inputs = self.get_inputs(transition_id)
 		# do any inputs exist?
 		if len(inputs) > 0:
 			# check if each place contains at least one token aka. has a
@@ -279,13 +279,13 @@ class PetriNet(AbstractPetriNet):
 			ValueError: place does not exists
 		"""
 		index = None
-		if self.place_exists(place):
+		if self.place_exists(place_name):
 			for idx, p in self.places.items():
 				if p == place:
 					index = idx
 					break
 
-			self.marking[index] = token
+			self.marking[index] = num_token
 		else:
 			raise ValueError('place does not exist.')
 
@@ -332,7 +332,7 @@ class PetriNet(AbstractPetriNet):
 		transition_mapping = [item for sublist in self.transitions.values() for
 							  item
 							  in sublist]
-		return name in transition_mapping
+		return transition_id in transition_mapping
 
 	def place_exists(self, place_name: int) -> bool:
 		"""
@@ -345,7 +345,7 @@ class PetriNet(AbstractPetriNet):
 			True if place exists in petri net, False otherwise.
 		"""
 
-		return name in list(self.places.values())
+		return place_name in list(self.places.values())
 
 	def all_enabled_transitions(self) -> list:
 		"""
@@ -366,10 +366,10 @@ class PetriNet(AbstractPetriNet):
 		Args:
 			name: id of transition
 		"""
-		if self.is_enabled(transition):
-			inputs = self.get_inputs(transition)
+		if self.is_enabled(transition_id):
+			inputs = self.get_inputs(transition_id)
 
-			outputs = self.get_outputs(transition)
+			outputs = self.get_outputs(transition_id)
 
 			# update ingoing token
 			for i in inputs:
@@ -420,29 +420,9 @@ class PetriNet(AbstractPetriNet):
 				index_places_end.append(key)
 		return index_places_end
 	
-	def get_spnets_initial_marking(self):
-		#only works for nets with 2 start places so far (assuming sp-nets)
-		index_start_places = self.get_index_initial_places()
-		index_place_start = index_start_places[0]
-		index_place_start_log = index_start_places[1]
-		init_mark_vector = list (numpy.repeat(0, len(self.places)))
-		init_mark_vector[index_place_start] = 1
-		init_mark_vector[index_place_start_log] = 1
-		return init_mark_vector
-	
-	def get_spnets_final_marking(self):
-		#only works for nets with 2 end places so far (assuming sp-nets)
-		index_final_places = self.get_index_final_places() 
-		index_place_end = index_final_places[0]
-		index_place_end_log = index_final_places[1]	
-		final_mark_vector = list (numpy.repeat(0, len(self.places)))
-		final_mark_vector[index_place_end] = 1
-		final_mark_vector[index_place_end_log] = 1
-		return final_mark_vector
-
 	def incidence_matrix(self):
 		# Creating an empty matrix							  	
-		incidence_matrix = numpy.zeros( ( self.num_places(), self.num_transitions() ), dtype=int)
+		incidence_matrix = np.zeros( ( self.num_places(), self.num_transitions() ), dtype=int)
         
 		transitions_by_index = self.transitions_by_index()
 
@@ -463,92 +443,3 @@ class PetriNet(AbstractPetriNet):
 					incidence_matrix[row_index][col_index] = -1
 
 		return incidence_matrix
-
-	#TODO clunky -> more easy sync transitions with transitions_by_index()
-	def synchronous_product(self, trace_net):
-		#self is model_net
-		sp_net = PetriNet()
-		place_offset = len(self.places.values())
-		transition_offset = len(self.transitions_by_index())
-
-		#PLACES
-		#copying the model net
-		for p in self.places.values():
-			sp_net.add_place(p)
-
-		#copying the trace net
-		for p in trace_net.places.values():
-			sp_net.add_place(p + place_offset)
-			
-
-		#TRANSITIONS
-		#copying the modelnet
-		model_transitions_by_index = self.transitions_by_index()
-		for i in range(0, len(model_transitions_by_index)):
-			sp_net.add_transition(model_transitions_by_index[i] + "_model")
-		
-		#copying the trace net
-		trace_transitions_by_index = trace_net.transitions_by_index()
-		for i in range(0, len(trace_transitions_by_index)):
-			sp_net.add_transition(trace_transitions_by_index[i] + "_log")
-
-
-		#EDGES	
-		#copying the model net
-		for edge in self.edges:
-			sp_net.add_edge(edge[0], edge[1])
-			
-		# copying the trace net
-		for edge in trace_net.edges:
-			new_edge = (0,0)
-			if edge[0] > 0:
-				new_edge = (edge[0]+place_offset, edge[1] - transition_offset)
-			elif edge[0] < 0:
-				new_edge = (edge[0] - transition_offset, edge[1]+place_offset)
-			sp_net.add_edge(new_edge[0], new_edge[1])
-		
-		
-		#CREATE NEW SYNCHRONOUS PRODUCT TRANSITIONS AND EDGES
-		#whenever trace_t has the same name as model_t we create a new sync_t with all the in/outputs from the model_ and trace_t combined
-		for keyT1 in trace_net.transitions.keys():
-			for keyT2 in self.transitions.keys():
-				if keyT1 == keyT2:
-					for i in range(0, len(trace_net.transitions[keyT1])):
-						keyT3 = keyT1 + "_synchronous"
-						sp_net.add_transition(keyT3)
-						#copy all the in/outputs from the trace net transitions onto the new sync prod transitions
-						#inputs
-						for node in trace_net.get_inputs(trace_net.transitions[keyT1][i]):
-							sp_net.add_edge(node+place_offset, sp_net.transitions[keyT3][i] )
-						#outputs
-						for node in trace_net.get_outputs(trace_net.transitions[keyT1][i]):
-							sp_net.add_edge(sp_net.transitions[keyT3][i], node+place_offset)
-						
-						#copy all the in/outputs from the model transitions onto the new sync prod transitions
-						#inputs
-						for node in self.get_inputs(self.transitions[keyT2][0]):
-							sp_net.add_edge(node, sp_net.transitions[keyT3][i] )
-						#outpus
-						for node in self.get_outputs(self.transitions[keyT2][0]):
-							sp_net.add_edge(sp_net.transitions[keyT3][i], node)
-		
-		return sp_net
-
-### make trace net an own class, derived form abstract pn?
-	def make_trace_net(self, trace: list) -> PetriNet:
-		"""
-		Takes a trace, as a list of strings(=events) and makes a traces net from it, 
-		i.e. a sequential connection of the events as places with transitions in between.
-		"""
-		#assume empty PetriNet
-		num_places = len(trace)+1
-
-		for i in range(1, num_places+1):
-			self.add_place(i)
-
-		for t in trace:
-			self.add_transition(t)
- 
-		for i in range(1, num_places):
-			self.add_edge(i, -i)
-			self.add_edge(-i, i+1)
