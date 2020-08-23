@@ -1,7 +1,7 @@
 from pmlab_lite.pn import PetriNet
 from .alignment import Alignment
 from . import variables as v
-import numpy
+import numpy as np
 import heapq
 
 BLANK = '>>' 
@@ -53,7 +53,7 @@ class A_star(Alignment):
 			current_node.number = count
 			
 			#checking whether the node is a solution. else: investigate
-			if( numpy.array_equal( current_node.marking_vector, final_mark_vector) ):
+			if( np.array_equal( current_node.marking_vector, final_mark_vector) ):
 				self.solutions.append(current_node)
 				v.solutions.append(self.alignment_move)
 					
@@ -156,22 +156,22 @@ class Node():
 		#looping over transitions of the synchronous product, to see which are active, given the marking of that node
 		for i in range(0, incidence_matrix.shape[1]):											#im.shape[1] returns #columns = #transitions
 			
-			if numpy.all( (incidence_matrix[:, i] + self.marking_vector) >= 0 ):				#im[:,i] returns i-th column as list
+			if np.all( (incidence_matrix[:, i] + self.marking_vector) >= 0 ):				#im[:,i] returns i-th column as list
 				#transition i is active
 				if i not in self.active_transitions:
 					self.active_transitions.append(i)
 					
 	#deciding on whether or not to add a node to the open list
-	def Add_node(self, open_list, closed_list, id):
+	def Add_node(self, open_list, closed_list):
 		#checking whether it is in the closed list
 		#ind is a list like [12,34,10]
-		ind = [k for k in range( len(closed_list) ) if numpy.array_equal(self.marking_vector, closed_list[k][1].marking_vector) ]
+		ind = [k for k in range( len(closed_list) ) if np.array_equal(self.marking_vector, closed_list[k][1].marking_vector) ]
 		
 		if len(ind) > 0:
 			pass
 		#checking whether it is in the open list, update if we found it
 		else:
-			ind = [k for k in range(len(open_list)) if numpy.array_equal(self.marking_vector, open_list[k][1].marking_vector)]
+			ind = [k for k in range(len(open_list)) if np.array_equal(self.marking_vector, open_list[k][1].marking_vector)]
 			
 			#at least once in open list
 			if ind:
@@ -221,8 +221,8 @@ class Heuristic():
 
 	def linear_programming_heursitic(self, node):
 		#Heuristic.heurisitic_to_final()
-		b = numpy.array(v.final_mark_vector) - numpy.array(node.marking_vector) 
-		x = numpy.linalg.lstsq(v.incidence_matrix, b, rcond=None)[0]
+		b = np.array(v.final_mark_vector) - np.array(node.marking_vector) 
+		x = np.linalg.lstsq(v.incidence_matrix, b, rcond=None)[0]
 		
 		# important note: with rcond=None, the the results in costs calculated my vary on different machines
 		# on three machines tested the unrounded sum of each x was mostly equal, differences occured in +-10 digits after comma
@@ -238,4 +238,4 @@ class Heuristic():
 			if v.transitions_by_index[key].startswith('tau'):
 				x[key] = 0
 		
-		node.cost_to_final_marking = numpy.sum(x)
+		node.cost_to_final_marking = np.sum(x)

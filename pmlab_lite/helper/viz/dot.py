@@ -5,6 +5,8 @@ from pmlab_lite.discovery.process_tree import ProcessTree
 from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn import AbstractPetriNet
 from pmlab_lite.pn import PetriNet
+from pmlab_lite.pn import SynchronousProduct
+import numpy as np
 
 BLANK = '>>'
 
@@ -92,7 +94,7 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 	render_dot(dot, filename)  # TODO: change to just return the object
 	return dot
 
-def draw_synchronous_product(input_net: AbstractPetriNet, filename="synchronous_product_net", format="pdf"):
+def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronous_product_net", format="pdf"):
 	color = ["black", "chartreuse3", "yellow1"]
 	transitions_by_index = input_net.transitions_by_index()
 

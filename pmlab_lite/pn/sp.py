@@ -1,5 +1,5 @@
 from . pn import PetriNet
-
+import numpy as np
 
 class SynchronousProduct(PetriNet):
 	""" 

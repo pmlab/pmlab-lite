@@ -281,7 +281,7 @@ class PetriNet(AbstractPetriNet):
 		index = None
 		if self.place_exists(place_name):
 			for idx, p in self.places.items():
-				if p == place:
+				if p == place_name:
 					index = idx
 					break
 
