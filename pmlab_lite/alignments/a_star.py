@@ -23,15 +23,15 @@ class A_star(Alignment):
 		self.solutions = []
 		
 	#a star algorithm
-	def A_star_exe(self, synchronous_product, trace, heuristic_variant="lp", no_of_solutions=1):
+	def A_star_exe(self, petri_net, trace, heuristic_variant="lp", no_of_solutions=1):
 		v.open_list = open_list = []
 		v.closed_list = closed_list = []
 
 		heuristic = Heuristic(heuristic_variant)
-		incidence_matrix = synchronous_product.incidence_matrix()
-		transitions_by_index = synchronous_product.transitions_by_index()
-		init_mark_vector = synchronous_product.get_spnets_initial_marking() 
-		final_mark_vector = synchronous_product.get_spnets_final_marking()
+		incidence_matrix = petri_net.incidence_matrix()
+		transitions_by_index = petri_net.transitions_by_index()
+		init_mark_vector = petri_net.get_init_marking() 
+		final_mark_vector = petri_net.get_final_marking()
 			
 		store_variables(incidence_matrix, init_mark_vector, final_mark_vector, transitions_by_index)
 			

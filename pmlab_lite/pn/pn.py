@@ -200,6 +200,13 @@ class PetriNet(AbstractPetriNet):
 			if p == place_name:
 				return idx
 
+	def rev_mapping(self) -> dict:
+		rev_mapping = {}
+		for k, v in self.get_mapping().items():
+			for k2 in v:
+				rev_mapping[k2] = k
+		return rev_mapping
+
 	def transitions_by_index(self) -> dict:
 		"""
 		Returns the reverse of data structure of the transitions, 
@@ -290,6 +297,14 @@ class PetriNet(AbstractPetriNet):
 			raise ValueError('place does not exist.')
 
 		return self
+
+	def init_marking(self):
+		"""
+		Resets the net to the init marking, i.e. all input places contain one token
+		"""
+		self.null_marking()
+		for i in self.get_index_init_places():
+			self.marking[i] = 1
 
 	def null_marking(self):
 		"""
@@ -398,7 +413,7 @@ class PetriNet(AbstractPetriNet):
 
 		return desc
 
-	def get_index_initial_places(self) -> list:
+	def get_index_init_places(self) -> list:
 		"""
 		Returns a list of the indices of the initial places, i.e. the keys to the values(names) of the place names for all places,
 		who do not have any input transitions.
@@ -420,6 +435,18 @@ class PetriNet(AbstractPetriNet):
 				index_places_end.append(key)
 		return index_places_end
 	
+	def get_init_marking(self) -> list:
+		init_mark_vector = list (np.repeat(0, len(self.places)))
+		for index in self.get_index_init_places():
+			init_mark_vector[i] = 1
+		return init_mark_vector
+
+	def get_final_marking(self) -> list:
+		final_mark_vector = list (np.repeat(0, len(self.places)))
+		for index in self.get_index_final_places():
+			final_mark_vector[i] = 1
+		return final_mark_vector
+
 	def incidence_matrix(self):
 		# Creating an empty matrix							  	
 		incidence_matrix = np.zeros( ( self.num_places(), self.num_transitions() ), dtype=int)

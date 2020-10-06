@@ -43,10 +43,7 @@ class EventLog(EventCollection):
 
     def add_event(self, event: Event):
         self.events.append(event)
-        if event.get_case_id() in self.traces:
-            self.traces[event.get_case_id()].append(event)
-        else:
-            self.traces[event.get_case_id()] = [event]
+        self.traces[event.get_case_id] = self.trace.get(event.get_case_id(), []) + [event] 
         return self
 
     def add_trace(self, case_id, activity_names: []):
@@ -65,3 +62,9 @@ class EventLog(EventCollection):
 
     def __next__(self):
         return self.events.__iter__().__next__()
+
+    def print_log(self):
+        for t in self.get_traces():
+            print("TRACE:")
+            for e in t:
+                print("> ", e.get_activity_name(), e.get_case_id(), e.values())
