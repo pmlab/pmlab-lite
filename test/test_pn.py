@@ -179,7 +179,7 @@ class TestPetriNetMethods(unittest.TestCase):
 		# dpn.add_marking(3, 2)
 
 		# start replay
-		dpn.replay()
+		dpn.replay(5)
 		self.assertListEqual(dpn.marking, [0, 0, 1])
 
 	# dpn.fire_transition('B')
@@ -207,3 +207,19 @@ class TestPetriNetMethods(unittest.TestCase):
 		self.assertDictEqual(dpn.places, {0: 1, 1: 2})
 		self.assertDictEqual(dpn.transitions, {'A': [-1, -4], 'B': [-2]})
 		self.assertListEqual(dpn.marking, [2, 0])
+
+	def test_place_capacity(self):
+		net = PetriNet()
+		for i in range(1,4):
+			net.add_place(i)
+		net.add_transition('A')
+		net.add_edge(1,-1)
+		net.add_edge(-1,2)
+		net.add_edge(-1,3)
+
+		net.add_marking(1,1)
+		net.add_marking(2,4)
+
+		net.fire_transition(-1)
+
+		print(net.get_exceeded_places())

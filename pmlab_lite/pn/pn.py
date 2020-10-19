@@ -394,9 +394,18 @@ class PetriNet(AbstractPetriNet):
 			# update outgoing token
 			for o in outputs:
 				idx = self.index_of_place(o)
+
+				#check if the maximum marking of the target place will be exceeded
+				if self.marking[idx] >= self.capacity[idx]:
+					print('Caution: Capacity (', self.capacity[idx],  ') of place', o, 'will be exceeded by', self.marking[idx]-self.capacity[idx]+1)
+					self.exceeded_places.append(idx)
+				
 				self.marking[idx] += 1
 		else:
 			print("Transition is not enabled!")
+
+	def get_exceeded_places(self):
+		return [self.places[idx] for idx in self.exceeded_places]
 
 	def __repr__(self):
 		"""

@@ -18,6 +18,7 @@ class AbstractPetriNet(ABC):
 		self.marking = []
 		self.capacity = []
 		self.counter = 0  # mapping
+		self.exceeded_places = [] #indexes of places
 
 	@abstractmethod
 	def add_place(self, name, capacity=1):
