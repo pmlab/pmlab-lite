@@ -13,7 +13,6 @@ class A_Star(Alignment):
 	
 	def __init__(self, synchronous_product, trace, heuristic: str='lp', alignments: int=1):
 		Alignment.__init__(self)
-		print('I\'m not the PIP-package. I\'m free!')
 
 		self.heuristic = Heuristic(heuristic)
 		self.incidence_matrix     = v.incidence_matrix     = synchronous_product.incidence_matrix()

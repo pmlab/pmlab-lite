@@ -408,8 +408,7 @@ class PetriNet(AbstractPetriNet):
 			   "Places: %s \n" \
 			   "Capacities: %s \n" \
 			   "Marking: %s \n" \
-			   "Edges: %s" % (self.transitions, self.places, self.capacity,
-							  self.marking, self.edges)
+			   "Edges: %s" % (self.transitions, self.places, self.capacity, self.marking, self.edges)
 
 		return desc
 
