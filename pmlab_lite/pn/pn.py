@@ -389,6 +389,11 @@ class PetriNet(AbstractPetriNet):
 			# update ingoing token
 			for i in inputs:
 				idx = self.index_of_place(i)
+
+				#check if place before fired t is exceeded and would be at allowed capacity after firing t
+				if idx in self.exceeded_places and self.marking[idx] == self.capacity[idx]+1:
+					self.exceeded_places.remove(idx)
+				
 				self.marking[idx] -= 1
 
 			# update outgoing token

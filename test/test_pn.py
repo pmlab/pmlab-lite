@@ -213,13 +213,20 @@ class TestPetriNetMethods(unittest.TestCase):
 		for i in range(1,4):
 			net.add_place(i)
 		net.add_transition('A')
+		net.add_transition('B')
 		net.add_edge(1,-1)
 		net.add_edge(-1,2)
 		net.add_edge(-1,3)
+		net.add_edge(2,-2)
 
 		net.add_marking(1,1)
 		net.add_marking(2,4)
 
 		net.fire_transition(-1)
 
+		print(net.get_exceeded_places())
+		net.fire_transition(-2)
+		net.fire_transition(-2)
+		net.fire_transition(-2)
+		net.fire_transition(-2)
 		print(net.get_exceeded_places())
