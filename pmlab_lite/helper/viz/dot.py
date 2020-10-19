@@ -137,10 +137,10 @@ def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronou
 	render_dot(dot, filename)  # TODO: change to just return the object
 	return dot
 
-def draw_a_star_search_space(alignment, filename="search_space", format="pdf"):
-    closed_list = alignment.closed_list_end
-    initial_mark_vector = closed_list[0][1].marking_vector
-    final_mark_vector = alignment.solutions[0].marking_vector
+def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
+    closed_list = astar.closed_list
+    initial_mark_vector = closed_list[0].marking_vector
+    final_mark_vector = astar.alignments[0].marking_vector
     colors = ["indianred2", "darkseagreen", "gray"]
     counter = 100
 
@@ -153,22 +153,22 @@ def draw_a_star_search_space(alignment, filename="search_space", format="pdf"):
 			 fontname='Helvetica', style='filled')
     fontcolor = 'black'
     changed_fontcolor = False
-    for e in closed_list:
+    for node in closed_list:
         #change color for darker nodes
         if not changed_fontcolor and counter < 30:
             changed_fontcolor = True
             fontcolor = 'white'
         #node is the final marking
-        if ( np.array_equal(e[1].marking_vector, final_mark_vector) ):
-            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)), 
+        if ( np.array_equal(node.marking_vector, final_mark_vector) ):
+            dot.node(str(node.marking_vector), label="H = " + str(round(float(node.cost_to_end),3)) + "\nG = " + str(round(float(node.cost_from_start),3)), 
                 color=colors[1])
         #node is the initial marking
-        elif ( np.array_equal(e[1].marking_vector, initial_mark_vector) ):
-            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)),
+        elif ( np.array_equal(node.marking_vector, initial_mark_vector) ):
+            dot.node(str(node.marking_vector), label="H = " + str(round(float(node.cost_to_end),3)) + "\nG = " + str(round(float(node.cost_from_start),3)),
                 color=colors[0])
         #any other node
         else:
-            dot.node(str(e[1].marking_vector), label="H = " + str(round(float(e[1].cost_to_final_marking),3)) + "\nG = " + str(round(float(e[1].cost_from_init_marking),3)), 
+            dot.node(str(node.marking_vector), label="H = " + str(round(float(node.cost_to_end),3)) + "\nG = " + str(round(float(node.cost_from_start),3)), 
                 color=colors[2]+str(counter), fontcolor=fontcolor)
         if counter > 0:
             counter -= 1
@@ -176,9 +176,9 @@ def draw_a_star_search_space(alignment, filename="search_space", format="pdf"):
     #draw edges
     for node in closed_list:
         #very first nodes parent node is " '' "
-        if node[1].parent_node != '':
-            parent_node = node[1].parent_node
-            dot.edge(str(parent_node.marking_vector), str(node[1].marking_vector), label=str(node[1].number))
+        if node.predecessor:
+            predecessor = node.predecessor
+            dot.edge(str(predecessor.marking_vector), str(node.marking_vector), label=str(node.number))
 
     render_dot(dot,filename)
     return dot

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
 	name='pmlab_lite',
-    version='0.4.2.3',
+    version='0.4.3.7',
     author=['Josep Carmona',
 			'Matthias Weidlich',
 			'Andrea Burattin',
@@ -23,6 +23,7 @@ setuptools.setup(
     		'numpy',
     		'graphviz',
     		'tqdm',
+			'lxml',
     	], #maybe pythone-dateutil
 	classifiers=[
 			'Development Status :: 2 - Pre-Alpha',

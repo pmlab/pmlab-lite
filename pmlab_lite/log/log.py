@@ -17,7 +17,7 @@ class Event(dict):
         return self["case_id"]
 
     def get_attributes(self):
-        return self.keys()
+        return [attribute for attribute in self.keys()]
 
 
 class EventCollection(Manipulable):
@@ -43,7 +43,7 @@ class EventLog(EventCollection):
 
     def add_event(self, event: Event):
         self.events.append(event)
-        self.traces[event.get_case_id] = self.trace.get(event.get_case_id(), []) + [event] 
+        self.traces[event.get_case_id()] = self.traces.get(event.get_case_id(), []) + [event] 
         return self
 
     def add_trace(self, case_id, activity_names: []):

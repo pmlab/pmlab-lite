@@ -435,38 +435,37 @@ class PetriNet(AbstractPetriNet):
 				index_places_end.append(key)
 		return index_places_end
 	
-	def get_init_marking(self) -> list:
-		init_mark_vector = list (np.repeat(0, len(self.places)))
+	def get_init_marking(self):
+		init_mark_vector = np.repeat(0, len(self.places))
 		for index in self.get_index_init_places():
-			init_mark_vector[i] = 1
+			init_mark_vector[index] = 1
 		return init_mark_vector
 
-	def get_final_marking(self) -> list:
-		final_mark_vector = list (np.repeat(0, len(self.places)))
+	def get_final_marking(self):
+		final_mark_vector = np.repeat(0, len(self.places))
 		for index in self.get_index_final_places():
-			final_mark_vector[i] = 1
+			final_mark_vector[index] = 1
 		return final_mark_vector
 
 	def incidence_matrix(self):
 		# Creating an empty matrix							  	
 		incidence_matrix = np.zeros( ( self.num_places(), self.num_transitions() ), dtype=int)
-        
+
 		transitions_by_index = self.transitions_by_index()
 
 		for t in transitions_by_index:
 			for key in self.places.keys():
-				t_val = -(t+1)					#reverse the index, to be the transtions value again
 				col_index = t
 				row_index = key
+
+				t_val = -(t+1)					#reverse the index, to be the transtions value again
 				p = self.places[key]
-				#edge goes from P to T and vice versaa
-				if ( (t_val, p) in self. edges) and ( (p, t_val) in self. edges): 
-					incidence_matrix[row_index][col_index] = 0
+
 				#edge goes from T to P
-				elif (t_val, p) in self.edges:
-					incidence_matrix[row_index][col_index] = 1
+				if (t_val, p) in self.edges:
+					incidence_matrix[row_index][col_index] += 1
 				#edge goes from P to T
-				elif (p, t_val) in self.edges:
-					incidence_matrix[row_index][col_index] = -1
+				if (p, t_val) in self.edges:
+					incidence_matrix[row_index][col_index] -= 1
 
 		return incidence_matrix
