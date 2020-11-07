@@ -116,5 +116,5 @@ def load_xes(file):
         
         # add trace to log
         log.append({'trace_id': trace_id, 'events': events})
-        
+
     return log

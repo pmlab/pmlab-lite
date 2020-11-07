@@ -43,6 +43,7 @@ class EventLog(EventCollection):
         self.traces = dict() # traces are stored as dictionary of case id -> list of events
         self.len = 0         # number of traces
         self.num_events = 0  # number of events
+        self.A = set() 
 
     def add_event(self, event: Event):
         self.events.append(event)
@@ -53,6 +54,12 @@ class EventLog(EventCollection):
         for activity_name in activity_names:
             self.add_event(Event(activity_name, case_id))
         return self
+
+    def activity_set(self):
+        """Creates the set of unique activities for the log."""
+        
+        for event in self.events:
+            self.A.add(event['concept:name'])
 
     def get_traces(self):
         return self.traces.values()
@@ -83,12 +90,12 @@ class EventLog(EventCollection):
 
         for i in range(len(traces_in_range)):
             print("TRACE_ID:",traces_in_range[i][0], "(trace number", i+start, ")")
-            print("  {:20}{:31}{:15}".format("activity name", "time", "transition"))
+            print("  {:28}{:31}{:15}".format("activity name", "time", "transition"))
             for event in traces_in_range[i][1]:
                 activity = event.get_activity_name()
                 time = event.get_timestamp().strftime("%m/%d/%Y %H:%M:%S.%f %Z")
                 transition = event['lifecycle:transition']
-                print("> {:20}{:31}{:15}".format(activity, time, transition)) #
+                print("> {:28}{:31}{:15}".format(activity, time, transition)) #
             print()
 
     def print(self):

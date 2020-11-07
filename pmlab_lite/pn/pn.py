@@ -372,12 +372,13 @@ class PetriNet(AbstractPetriNet):
 
 		return list(filter(lambda x: self.is_enabled(x), transitions))
 
-	def fire_transition(self, transition_id: int):
+	def fire_transition(self, transition_id: int, ignore_warnings=False):
 		"""
-		Fire transition.
+		Fire transition. If capacities of places would be exceeded an warning is printed, which can be turned off.
 
 		Args:
-			name: id of transition
+			transition_id (int): negative id of transition to fire
+			ignore_exceedings (bool, optional): If true warnings for exceeded capacity of places are not shown. Defaults to False.
 		"""
 		if self.is_enabled(transition_id):
 			inputs = self.get_inputs(transition_id)
@@ -400,7 +401,8 @@ class PetriNet(AbstractPetriNet):
 
 				#check if the maximum marking of the target place will be exceeded
 				if self.marking[idx] >= self.capacity[idx]:
-					print('Caution: Capacity (', self.capacity[idx],  ') of place', o, 'will be exceeded by', self.marking[idx]-self.capacity[idx]+1)
+					if  not ignore_warnings: 
+						print('Caution: Capacity (', self.capacity[idx],  ') of place', o, 'will be exceeded by', self.marking[idx]-self.capacity[idx]+1)
 					self.exceeded_places.append(idx)
 				
 				self.marking[idx] += 1
