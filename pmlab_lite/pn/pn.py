@@ -299,17 +299,15 @@ class PetriNet(AbstractPetriNet):
 		return self
 
 	def init_marking(self):
-		"""
-		Resets the net to the init marking, i.e. all input places contain one token
-		"""
+		"""Resets the net to the init marking, i.e. all input places contain one token."""
+		
 		self.null_marking()
 		for i in self.get_index_init_places():
 			self.marking[i] = 1
 
 	def null_marking(self):
-		"""
-		Resets the net to the null marking, i.e. all places contain no token
-		"""
+		"""Resets the net to the null marking, i.e. all places contain no token."""
+
 		for i in range(0, len(self.marking)):
 			self.marking[i] = 0
 

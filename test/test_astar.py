@@ -1,7 +1,7 @@
 import unittest
 from pmlab_lite.pn import PetriNet, TraceNet, SynchronousProduct
 from pmlab_lite.alignments import a_star
-from pmlab_lite.helper.viz.dot import draw_a_star_search_space
+from pmlab_lite.helper.viz.dot import draw_synchronous_product, draw_a_star_search_space
 
 #create running example
 running_example = PetriNet()
@@ -41,6 +41,8 @@ sp2 = SynchronousProduct(running_example, trace_net2)
 
 b = a_star.A_Star(sp2, trace2, heuristic='lp', alignments=2)
 b.search()
+print()
 b.print_alignment()
 
 #draw_a_star_search_space(b)
+#draw_synchronous_product(sp2)

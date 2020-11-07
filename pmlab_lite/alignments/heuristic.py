@@ -22,19 +22,21 @@ class Heuristic():
 		#Heuristic.heurisitic_to_final()
 		b = np.array(v.final_mark_vector) - np.array(node.marking_vector) 
 		x = np.linalg.lstsq(v.incidence_matrix, b, rcond=None)[0]
-		x2 = lstsq(v.incidence_matrix, b, cond=None)[0]
+		#x2 = lstsq(v.incidence_matrix, b, cond=None)[0]
 		# important note: with rcond=None, the the results in costs calculated my vary on different machines
 		# on three machines tested the unrounded sum of each x was mostly equal, differences occured in +-10 digits after comma
 		# after rounding up or down though, differences where bigger on each machine (e.g. machine1 rounds -0.000001 to 0
 		# 			and machine2 rounds 0.00000001 to 1 -> making the sums differ in multiples of 1
 		#with rcond=-1 the same results have been calculated on each machine
-		
+		#
+		# also linalg.lstsq does not return the x fulfilling min c(x) 
+
 		#rounding up or down, 
-		#x2[x2 > 0] = 1
-		#x2[x2 <= 0] = 0
+		x[x > 0] = 1
+		x[x <= 0] = 0
 		
 		for key in v.transitions_by_index:
-			if v.transitions_by_index[key].startswith('tau'):
-				x2[key] = 0
+			if v.transitions_by_index[key].startswith('tau') or v.transitions_by_index[key].endswith('synchronous'):
+				x[key] = 0
 		
-		return np.sum(x2)
+		return np.sum(x)

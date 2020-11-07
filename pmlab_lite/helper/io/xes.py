@@ -7,6 +7,16 @@ from tqdm import tqdm
 
 
 def import_from_xes(file):
+    """
+        Reads a *.xes-file and returns it as a log data structure. 
+
+        Args:
+            file: string literal path to a *.xes-file 
+
+        Returns:
+            log: the log represented as a data structure as in pmlab_lite.log
+    """
+
     log = EventLog()
 
     if isinstance(file, str):
@@ -27,28 +37,84 @@ def import_from_xes(file):
     traces = root.findall(ns+'trace', namespace)
 
     # parse all traces in the log
-    for t in tqdm(traces):
+    for trace in tqdm(traces):
+        
         # extract the case id
-        case_id = t.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
+        case_id = trace.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
+        
         # parse all events in the trace
-        for e in t.findall(ns+'event', namespace):
+        for evnt in trace.findall(ns+'event', namespace):
+            
             # extract the activity name and construct the new event
-            activity_name = e.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
-            event = Event(activity_name, case_id)
+            concept_name = evnt.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
+            event = Event(concept_name, case_id)
+
             # parse all string attributes
-            for a in e.findall(ns+'string', namespace):
+            for a in evnt.findall(ns+'string', namespace):
                 # we need to exclude the name of the event
                 if a.attrib['key'] != "concept:name":
                     event[a.attrib['key']] = a.attrib['value']
             # parse all integer attributes
-            for a in e.findall(ns+'int', namespace):
+            for a in evnt.findall(ns+'int', namespace):
                 event[a.attrib['key']] = int(a.attrib['value'])
             # parse all date attributes
-            for a in e.findall(ns+'date', namespace):
+            for a in evnt.findall(ns+'date', namespace):
                 event[a.attrib['key']] = parse(a.attrib['value'])
             # parse all boolean attributes
-            for a in e.findall(ns+'boolean', namespace):
+            for a in evnt.findall(ns+'boolean', namespace):
                 event[a.attrib['key']] = a.attrib['value'].lower() == 'true'
+            
             log.add_event(event)
     
+    log.len = len(log.traces)
+    log.num_events = len(log.events)
+
+    return log
+
+
+def load_xes(file):
+    """A faster load of a log, which only stores the attributes name, timestamp, resource and transition per event.
+       The data structure of a log then looks as follows:
+        log = [ ... 
+                {'trace_id: 12, events: [ {'name': a, 'timestamp': b, 'resource': c, 'transition': d  }, {...}, ...] },
+                {'trace_id: 13, events: [ {'name': a, 'timestamp': b, 'resource': c, 'transition': d  }, {...}, ...] },
+                ... ]
+
+    Args:
+        file (string): path to a *.xes-file
+
+    Returns:
+        list: The log as a dats strucure described above
+    """
+
+    log = []
+    
+    tree = etree.parse(file)
+    data = tree.getroot()
+    
+    # find all traces
+    traces = data.findall('{http://www.xes-standard.org/}trace')
+    
+    for t in tqdm(traces):
+        trace_id = None
+        
+        # get trace id
+        for a in t.findall('{http://www.xes-standard.org/}string'):
+            if a.attrib['key'] == 'concept:name':
+                trace_id = a.attrib['value']
+        
+        events = []
+        # events
+        for event in t.iter('{http://www.xes-standard.org/}event'):
+            
+            e = {'name': None, 'timestamp': None, 'resource': None, 'transition': None}
+            
+            for a in event:
+                e[a.attrib['key'].split(':')[1]] = a.attrib['value']
+
+            events.append(e)
+        
+        # add trace to log
+        log.append({'trace_id': trace_id, 'events': events})
+        
     return log

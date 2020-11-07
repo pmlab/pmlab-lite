@@ -1,2 +1,2 @@
 BLANK = '>>' 
-EPSILON = 0.00001
+EPSILON = 0.001

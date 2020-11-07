@@ -30,7 +30,6 @@ class Alignment:
 			self.log_moves.append( [e[1] for e in u if e[1] != c.BLANK])
 
 	def print_alignment(self):
-
 		row_one  = '| log trace          |'
 		separator = ''
 		row_two  = '| execution sequence |'
