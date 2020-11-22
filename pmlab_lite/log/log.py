@@ -4,8 +4,7 @@ from datetime import datetime
 class Event(dict):
     """An event is the minimum observable unit of information. It actually is a dictionary with, at least, three attributes: 'case_id', 'activity_name' and 'timestamp'."""
 
-    def __init__(self, activity_name, case_id):
-        self["concept:name"] = activity_name
+    def __init__(self, case_id):
         self["case_id"] = case_id
 
     def get_activity_name(self):
@@ -41,9 +40,8 @@ class EventLog(EventCollection):
     def __init__(self):
         self.events = list() # events are still stored as list of events
         self.traces = dict() # traces are stored as dictionary of case id -> list of events
-        self.len = 0         # number of traces
-        self.num_events = 0  # number of events
         self.A = set() 
+        self.classifiers = dict() 
 
     def add_event(self, event: Event):
         self.events.append(event)
@@ -66,6 +64,27 @@ class EventLog(EventCollection):
 
     def get_trace(self, case_id):
         return self.traces[case_id]
+
+    def equal_by_classifier(self, event1, event2, classifier):
+        """ Return true if the given events are equal according to the classifier, false otherwise."""
+
+        attrib1 = self.classifiers[classifier][0]
+        attrib2 = self.classifiers[classifier][1]
+        return event1[attrib1] == event2[attrib1] and event1[attrib2] == event2[attrib2]
+
+    def filter_by_classifier(self, event, classifier: str):
+        """Return a list of all events of the log that are equal to the given event by the given classifier. 
+
+        Args:
+            event (Event): [The Event to compare all the other events of the log to.]
+            classifier (str): [A classifier, i.e. a list of attributes the events must have the same values for, to be considered equal.]
+        """
+        equal_events = [event]
+        for event2 in self.events:
+            if self.equal_by_classifier(event, event2, classifier) and event is not event2:
+                equal_events.append(event2)
+        
+        return equal_events
 
     def __iter__(self):
         return self.events.__iter__()

@@ -1,9 +1,10 @@
 from dateutil.parser import parse
 import gzip
-#import xml.etree.ElementTree as ET      #lxml should be faster (~ factor 2.0)
 from lxml import etree
 from pmlab_lite.log import *
+from . import constants as  c
 from tqdm import tqdm
+import re
 
 
 def import_from_xes(file):
@@ -34,7 +35,20 @@ def import_from_xes(file):
     root = tree.getroot()
     if (namespace['xes'] in root.tag):          #some xes files have namespaces before their tags so find can't normally find tags, e.g. bpi12 and bpi14 log
         ns += 'xes:' 
+
     traces = root.findall(ns+'trace', namespace)
+    classifiers = root.findall(ns+'classifier', namespace)
+
+    if classifiers:
+        for classifier in classifiers:
+            name = classifier.attrib['name']
+            attributes = classifier.attrib['keys']
+            #resolve special case: wo 
+            if "'" in attributes:
+                attributes = re.findall(r'\'(.*?)\'', attributes)
+            else:
+                attributes = attributes.split()
+            log.classifiers[name] = attributes 
 
     # parse all traces in the log
     for trace in tqdm(traces):
@@ -45,32 +59,74 @@ def import_from_xes(file):
         # parse all events in the trace
         for evnt in trace.findall(ns+'event', namespace):
             
-            # extract the activity name and construct the new event
-            concept_name = evnt.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
-            event = Event(concept_name, case_id)
+            event = Event(case_id)
+            """ # extract the activity name and construct the new event                                 #why here a special case for concept:name??
+            if evnt.find(ns+'string[@key="concept:name"]', namespace) is not None:
+                concept_name = evnt.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
+                event["concept:name"] = concept_name """
 
             # parse all string attributes
             for a in evnt.findall(ns+'string', namespace):
                 # we need to exclude the name of the event
-                if a.attrib['key'] != "concept:name":
-                    event[a.attrib['key']] = a.attrib['value']
+                #if a.attrib['key'] != "concept:name":
+                event[a.attrib['key']] = a.attrib['value']
+            
             # parse all integer attributes
             for a in evnt.findall(ns+'int', namespace):
                 event[a.attrib['key']] = int(a.attrib['value'])
+            
             # parse all date attributes
             for a in evnt.findall(ns+'date', namespace):
                 event[a.attrib['key']] = parse(a.attrib['value'])
+            
             # parse all boolean attributes
             for a in evnt.findall(ns+'boolean', namespace):
                 event[a.attrib['key']] = a.attrib['value'].lower() == 'true'
             
             log.add_event(event)
-    
-    log.len = len(log.traces)
-    log.num_events = len(log.events)
 
     return log
 
+
+def export_to_xes(log: EventLog, target_path: str):
+    root = etree.Element('log')
+
+    __export_classifiers(log, root)
+    __export_traces(log, root)
+
+    tree = etree.ElementTree(root)
+
+    tree.write(target_path, pretty_print=True, xml_declaration=True, encoding="utf-8")
+
+def __export_classifiers(log: EventLog, root):
+    for classi in log.classifiers.keys():
+        classi_attributes = log.classifiers[classi]
+        classifier = etree.SubElement(root, 'classifier')
+
+def __export_traces(log: EventLog, root):
+    #if we had trace attributes we would also add them here
+    for trc in log.traces.keys():
+        trace = etree.SubElement(root, 'trace')
+        __export_events_of_trace(log.traces[trc], trace)
+
+def __export_events_of_trace(trc: list, trace):
+    for evnt in trc:
+        event = etree.SubElement(trace, 'event')
+        __export_attributes(evnt, event)
+
+#this funtion should be made more generic as log, trace... can lso hold attributes to be exported
+def __export_attributes(evnt: dict, event):
+    for attr, attr_val in evnt.items():
+        log_attr_type = type(attr_val).__name__
+        xes_attr_type = __log_to_xes_attribute_type(log_attr_type)
+
+        attribute = etree.SubElement(event, xes_attr_type)
+
+def __log_to_xes_attribute_type(log_attr_type) -> str:
+    if log_attr_type in c.xes_typenames:
+        return c.xes_typenames[log_attr_type]
+    else:
+        return 'string'
 
 def load_xes(file):
     """A faster load of a log, which only stores the attributes name, timestamp, resource and transition per event.

@@ -401,7 +401,7 @@ class PetriNet(AbstractPetriNet):
 
 				#check if the maximum marking of the target place will be exceeded
 				if self.marking[idx] >= self.capacity[idx]:
-					if  not ignore_warnings: 
+					if not ignore_warnings: 
 						print('Caution: Capacity (', self.capacity[idx],  ') of place', o, 'will be exceeded by', self.marking[idx]-self.capacity[idx]+1)
 					self.exceeded_places.append(idx)
 				
