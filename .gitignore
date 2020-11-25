@@ -13,3 +13,4 @@ __pycache__/
 build/
 dist/
 pmlab_lite.egg-info/
+.ipynb_checkpoints/
