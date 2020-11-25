@@ -54,13 +54,16 @@ def import_from_xes(file):
     for trace in tqdm(traces):
         
         # extract the case id
-        case_id = trace.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
+        if trace.find(ns+'string[@key="concept:name"]', namespace) is not None:
+            case_id = trace.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
+        else:
+            case_id = None
         
         # parse all events in the trace
         for evnt in trace.findall(ns+'event', namespace):
             
             event = Event(case_id)
-            """ # extract the activity name and construct the new event                                 #why here a special case for concept:name??
+            """ # extract the activity name and construct the new event                                 #why is there a special case for concept:name??
             if evnt.find(ns+'string[@key="concept:name"]', namespace) is not None:
                 concept_name = evnt.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
                 event["concept:name"] = concept_name """
@@ -89,6 +92,13 @@ def import_from_xes(file):
 
 
 def export_to_xes(log: EventLog, target_path: str):
+    """Exprots an EventLog structure as stored by pmlab_lite to an *.xes-file.
+
+    Args:
+        log (EventLog): The Event Log to be exported.
+        target_path (str): The path- and filename of the exported *.xes-file, e.g. "some_file.xes".
+    """
+    
     root = etree.Element('log')
 
     __export_classifiers(log, root)
@@ -100,8 +110,11 @@ def export_to_xes(log: EventLog, target_path: str):
 
 def __export_classifiers(log: EventLog, root):
     for classi in log.classifiers.keys():
-        classi_attributes = log.classifiers[classi]
+        classi_attributes = ['\'' + attr + '\'' if ' ' in attr else attr for attr in log.classifiers[classi]]
         classifier = etree.SubElement(root, 'classifier')
+        
+        classifier.set('name', classi)
+        classifier.set('keys', " ".join(classi_attributes))
 
 def __export_traces(log: EventLog, root):
     #if we had trace attributes we would also add them here
@@ -114,19 +127,30 @@ def __export_events_of_trace(trc: list, trace):
         event = etree.SubElement(trace, 'event')
         __export_attributes(evnt, event)
 
-#this funtion should be made more generic as log, trace... can lso hold attributes to be exported
+#this function should be made more generic as log, trace... can lso hold attributes to be exported
 def __export_attributes(evnt: dict, event):
-    for attr, attr_val in evnt.items():
-        log_attr_type = type(attr_val).__name__
+    for log_attr, log_attr_val in evnt.items():
+        log_attr_type = type(log_attr_val).__name__
         xes_attr_type = __log_to_xes_attribute_type(log_attr_type)
+        xes_attr_value = __get_xes_attribute_value(xes_attr_type, log_attr_val)
 
         attribute = etree.SubElement(event, xes_attr_type)
+        attribute.set('key', log_attr)
+        attribute.set('value', xes_attr_value)
 
 def __log_to_xes_attribute_type(log_attr_type) -> str:
     if log_attr_type in c.xes_typenames:
         return c.xes_typenames[log_attr_type]
     else:
         return 'string'
+
+def __get_xes_attribute_value(xes_attr_type, log_attr_val):
+    if xes_attr_type == 'date':
+        return log_attr_val.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + log_attr_val.strftime('%z')[0:3] + ':' + log_attr_val.strftime('%z')[3:]
+    elif xes_attr_type == 'boolean':
+        return str(log_attr_val).lower()
+    else:
+        return str(log_attr_val)
 
 def load_xes(file):
     """A faster load of a log, which only stores the attributes name, timestamp, resource and transition per event.

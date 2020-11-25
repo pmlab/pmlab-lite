@@ -65,14 +65,14 @@ class EventLog(EventCollection):
     def get_trace(self, case_id):
         return self.traces[case_id]
 
-    def equal_by_classifier(self, event1, event2, classifier):
+    def equal_by_classifier(self, event1: Event, event2: Event, classifier: str) -> bool:
         """ Return true if the given events are equal according to the classifier, false otherwise."""
 
         attrib1 = self.classifiers[classifier][0]
         attrib2 = self.classifiers[classifier][1]
         return event1[attrib1] == event2[attrib1] and event1[attrib2] == event2[attrib2]
 
-    def filter_by_classifier(self, event, classifier: str):
+    def filter_by_classifier(self, event, classifier: str) -> list:
         """Return a list of all events of the log that are equal to the given event by the given classifier. 
 
         Args:
@@ -92,7 +92,7 @@ class EventLog(EventCollection):
     def __next__(self):
         return self.events.__iter__().__next__()
 
-    def print_traces(self, start: int=0, num: int=1):
+    def print_traces(self, start: int=0, num: int=1): #maybe change to print global attributes so printing is flexible to different logs
         """
             Prints the traces of the log from 'start' to 'end'. 
             For instance to print 3 traces starting from the 4th trace: log.print_traces(4, 3)
@@ -105,7 +105,7 @@ class EventLog(EventCollection):
                 Index out of bounds Error: Num > len(log) - 1
         """  
         
-        traces_in_range = list(self.traces.items())[start:start+num]               #gives us the traces as tuples: [ (case_id, [event1, event2, ...], ...) ] so we can index with numbers rather than case_id
+        traces_in_range = list(self.traces.items())[start:start+num]               #gives us the traces as tuples: [ (case_id, [event1, event2, ...]), ... ] so we can index with numbers rather than case_id
 
         for i in range(len(traces_in_range)):
             print("TRACE_ID:",traces_in_range[i][0], "(trace number", i+start, ")")

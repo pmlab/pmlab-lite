@@ -10,30 +10,26 @@ rl_names = ['BPIC12.xes', 'BPIC13_closed_problems.xes', 'BPIC13_incidents.xes', 
 a_path = '../XES_Certification/Artificial/'
 rl_path = '../XES_Certification/Real-life/'
 
-a_log = a_path + a_names[2]
+a_log = a_path + a_names[5]
 rl_log = rl_path + rl_names[0]
 
-log = xes.import_from_xes(a_log)
 
+#test pmlab-lite
+log = xes.import_from_xes('test_log.xes')
 print("Number of traces:", len(log.traces))
 print("Number of events:", len(log.events))
 print("Classifiers:", log.classifiers)
+log.print_traces(0,2)
 print()
-print(log.events [2])
-print()
-for i, id in enumerate(log.traces):
-    print(i, log.traces[id])
-    if i > 0:
-        break
 
 xes.export_to_xes(log, 'test_log.xes')
 
-#test classifier in pm4py
-""" from pm4py.objects.log.importer.xes import importer as xes_importer
+#test pm4py
+from pm4py.objects.log.importer.xes import importer as xes_importer
 
 test_log = xes_importer.apply(a_log)
-test_log2 = xes_importer.apply(a_path + a_names[5])
 print("Number of traces:", len(test_log))
 print("Classifiers:", test_log.classifiers)
-print()
-print(test_log[0][0]) """
+
+from pm4py.objects.log.exporter.xes import exporter as xes_exporter
+xes_exporter.apply(test_log, 'test_log2.xes')
