@@ -11,7 +11,7 @@ rl_names = ['BPIC12.xes', 'BPIC13_closed_problems.xes', 'BPIC13_incidents.xes', 
 a_path = '../XES_Certification/Artificial/'
 rl_path = '../XES_Certification/Real-life/'
 
-a_log = a_path + a_names[-1]
+a_log = a_path + a_names[1]
 rl_log = rl_path + rl_names[0] 
 
 
@@ -26,5 +26,12 @@ test_log = xes_importer.apply(a_log, variant=xes_importer.Variants.ITERPARSE)
 print()
 pprint(test_log.classifiers)
 print()
-pprint(log.classifiers)
-pprint(log.events[:2])
+pprint(log.metadata)
+print()
+for i, key in enumerate(log.traces):
+    print(key)
+    pprint(log.traces[key])
+    print()
+    if i > 1:
+        break
+#xes.export_to_xes(log, "test.xes")

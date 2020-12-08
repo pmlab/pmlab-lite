@@ -26,13 +26,17 @@ def import_from_xes(file):
     root = tree.getroot()
     ns = __check_namespace(root, 'xes')
 
-    __import_log_attributes(log, root, ns)
-    __import_globals(log, root,ns)
     __import_extensions(log, root,ns)
+    __import_globals(log, root,ns)
     __import_classifiers(log, root, ns)
+    __import_log_attributes(log, root, ns)
     __import_traces(log, root, ns)
 
     return log
+
+def __import_extensions(log: EventLog, root, ns: str):
+    for ext in root.findall(ns+'extension', NAMESPACES):
+        log.extensions[ext.attrib['name']] = {'prefix': ext.attrib['prefix'], 'uri': ext.attrib['uri']}
 
 def __import_globals(log: EventLog, root, ns: str):
     globals = root.findall(ns+'global', NAMESPACES)
@@ -43,10 +47,6 @@ def __import_globals(log: EventLog, root, ns: str):
             for attr in g.findall(ns+attr_type, NAMESPACES):
                 key, value = __get_xes_key_value(attr, attr_type)
                 log.globals[scope][key] = value
-
-def __import_extensions(log: EventLog, root, ns: str):
-    for ext in root.findall(ns+'extension', NAMESPACES):
-        log.extensions[ext.attrib['name']] = {'prefix': ext.attrib['prefix'], 'uri': ext.attrib['uri']}
 
 def __import_classifiers(log: EventLog, root, ns: str):
     classifiers = root.findall(ns+'classifier', NAMESPACES)
@@ -83,6 +83,12 @@ def __import_traces(log: EventLog, root, ns: str):
         __import_trace_attributes(log, case_id, trace, ns)
         __import_events(log, case_id, trace, ns)
 
+def __import_trace_attributes(log: EventLog, case_id, root, ns: str):
+    for attr_type in ATTR_TYPES:
+        for attr in root.findall(ns+attr_type, NAMESPACES):
+            key, value = __get_xes_key_value(attr, attr_type)
+            log.traces[case_id][key] = value
+
 def __import_events(log: EventLog, case_id, root, ns):
     for e in root.findall(ns+'event', NAMESPACES):
             
@@ -94,12 +100,6 @@ def __import_events(log: EventLog, case_id, root, ns):
                 event[key] = value
 
         log.add_event(event)
-
-def __import_trace_attributes(log: EventLog, case_id, root, ns: str):
-    for attr_type in ATTR_TYPES:
-        for attr in root.findall(ns+attr_type, NAMESPACES):
-            key, value = __get_xes_key_value(attr, attr_type)
-            log.traces[case_id][key] = value
 
 def __get_xes_key_value(xes_attr, attr_type):
     """
@@ -153,7 +153,7 @@ def __check_namespace(root, namespace: str) -> str:
 
 
 
-# EXPORTING 
+# EXPORTING #add extensions, globals, log attr, trace attr
 def export_to_xes(log: EventLog, target_path: str):
     """Exprots an EventLog structure as stored by pmlab_lite to an *.xes-file.
 
@@ -164,12 +164,27 @@ def export_to_xes(log: EventLog, target_path: str):
     
     root = etree.Element('log')
 
+    __export_extensions(log, root)
+    __export_globals(log, root)
     __export_classifiers(log, root)
+    __export_log_attributes(log, root)
     __export_traces(log, root)
 
     tree = etree.ElementTree(root)
-
     tree.write(target_path, pretty_print=True, xml_declaration=True, encoding="utf-8")
+
+def __export_extensions(log: EventLog, root):
+    for key in log.extensions:
+        extension = etree.SubElement(root, 'extension')
+        extension.set('name', key)
+        extension.set('prefix', log.extensions[key]['prefix'])
+        extension.set('uri', log.extensions[key]['uri'])
+
+def __export_globals(log: EventLog, root):
+    for scope in log.globals:
+        g = etree.SubElement(root, 'global')
+        g.set('scope', scope)
+        __export_attributes(log.globals[scope], g)
 
 def __export_classifiers(log: EventLog, root):
     for classi in log.classifiers.keys():
@@ -179,25 +194,28 @@ def __export_classifiers(log: EventLog, root):
         classifier.set('name', classi)
         classifier.set('keys', " ".join(classi_attributes))
 
-def __export_traces(log: EventLog, root):
-    #if we had trace attributes we would also add them here
-    for trc in log.traces.keys():
-        trace = etree.SubElement(root, 'trace')
-        __export_events_of_trace(log.traces[trc], trace)
+def __export_log_attributes(log: EventLog, root):
+    __export_attributes(log.metadata, root)
 
-def __export_events_of_trace(trc: list, trace):
+def __export_traces(log: EventLog, root):
+    for case_id in log.traces.keys():
+        trace = etree.SubElement(root, 'trace')
+        trace_attr = {key:log.traces[case_id][key] for key in log.traces[case_id] if key!='events'} #don't consider the events as a trace attribute, alternate solution: make all atributes a subdict
+        __export_attributes(trace_attr, trace)
+        __export_events_of_trace(log.traces[case_id]['events'], trace)
+
+def __export_events_of_trace(trc: list, root):
     for evnt in trc:
-        event = etree.SubElement(trace, 'event')
+        event = etree.SubElement(root, 'event')
         __export_attributes(evnt, event)
 
-#this function should be made more generic as log, trace... can lso hold attributes to be exported
-def __export_attributes(evnt: dict, event):
-    for log_attr, log_attr_val in evnt.items():
+def __export_attributes(attributes: dict, root):
+    for log_attr, log_attr_val in attributes.items():
         log_attr_type = type(log_attr_val).__name__
         xes_attr_type = __log_to_xes_attribute_type(log_attr_type)
         xes_attr_value = __get_xes_attribute_value(xes_attr_type, log_attr_val)
 
-        attribute = etree.SubElement(event, xes_attr_type)
+        attribute = etree.SubElement(root, xes_attr_type)
         attribute.set('key', log_attr)
         attribute.set('value', xes_attr_value)
 
