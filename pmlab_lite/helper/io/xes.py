@@ -152,8 +152,6 @@ def __check_namespace(root, namespace: str) -> str:
         return ''
 
 
-
-# EXPORTING #add extensions, globals, log attr, trace attr
 def export_to_xes(log: EventLog, target_path: str):
     """Exprots an EventLog structure as stored by pmlab_lite to an *.xes-file.
 
