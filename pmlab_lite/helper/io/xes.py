@@ -1,11 +1,13 @@
 from dateutil.parser import parse
 import gzip
 from lxml import etree
-from pmlab_lite.log import *
+from pmlab_lite.log import Event, EventLog
 from . import constants as  c
 from tqdm import tqdm
 import re
 
+NAMESPACES = {'xes': 'http://www.xes-standard.org/'}
+ATTR_TYPES = ['string', 'date', 'boolean', 'int']
 
 def import_from_xes(file):
     """
@@ -18,26 +20,36 @@ def import_from_xes(file):
             log: the log represented as a data structure as in pmlab_lite.log
     """
 
+    filename = __check_file_type(file)
     log = EventLog()
-
-    if isinstance(file, str):
-          filename = file
-          if filename.endswith('.gz'):
-              file = gzip.open(filename, 'rb')
-          else:
-              pass  # Just send the filename to xmltree.parse
-    else:
-          filename = file.name
-
-    namespace = {'xes': 'http://www.xes-standard.org/'}
-    ns=''
     tree = etree.parse(file)
     root = tree.getroot()
-    if (namespace['xes'] in root.tag):          #some xes files have namespaces before their tags so find can't normally find tags, e.g. bpi12 and bpi14 log
-        ns += 'xes:' 
+    ns = __check_namespace(root, 'xes')
 
-    traces = root.findall(ns+'trace', namespace)
-    classifiers = root.findall(ns+'classifier', namespace)
+    __import_log_attributes(log, root, ns)
+    __import_globals(log, root,ns)
+    __import_extensions(log, root,ns)
+    __import_classifiers(log, root, ns)
+    __import_traces(log, root, ns)
+
+    return log
+
+def __import_globals(log: EventLog, root, ns: str):
+    globals = root.findall(ns+'global', NAMESPACES)
+    for g in globals:
+        scope = g.attrib['scope']
+        log.globals[scope] = {}
+        for attr_type in ATTR_TYPES:
+            for attr in g.findall(ns+attr_type, NAMESPACES):
+                key, value = __get_xes_key_value(attr, attr_type)
+                log.globals[scope][key] = value
+
+def __import_extensions(log: EventLog, root, ns: str):
+    for ext in root.findall(ns+'extension', NAMESPACES):
+        log.extensions[ext.attrib['name']] = {'prefix': ext.attrib['prefix'], 'uri': ext.attrib['uri']}
+
+def __import_classifiers(log: EventLog, root, ns: str):
+    classifiers = root.findall(ns+'classifier', NAMESPACES)
 
     if classifiers:
         for classifier in classifiers:
@@ -50,47 +62,98 @@ def import_from_xes(file):
                 attributes = attributes.split()
             log.classifiers[name] = attributes 
 
-    # parse all traces in the log
+def __import_log_attributes(log: EventLog, root, ns: str):
+    for attr_type in ATTR_TYPES:
+        for attr in root.findall(ns+attr_type, NAMESPACES):
+            key, value = __get_xes_key_value(attr, attr_type)
+            log.metadata[key] = value
+
+def __import_traces(log: EventLog, root, ns: str):
+    traces = root.findall(ns+'trace', NAMESPACES)
+
     for trace in tqdm(traces):
         
         # extract the case id
-        if trace.find(ns+'string[@key="concept:name"]', namespace) is not None:
-            case_id = trace.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
+        if trace.find(ns+'string[@key="concept:name"]', NAMESPACES) is not None:
+            case_id = trace.find(ns+'string[@key="concept:name"]', NAMESPACES).attrib['value']
         else:
             case_id = None
+        log.add_trace(case_id)
         
-        # parse all events in the trace
-        for evnt in trace.findall(ns+'event', namespace):
-            
-            event = Event(case_id)
-            """ # extract the activity name and construct the new event                                 #why is there a special case for concept:name??
-            if evnt.find(ns+'string[@key="concept:name"]', namespace) is not None:
-                concept_name = evnt.find(ns+'string[@key="concept:name"]', namespace).attrib['value']
-                event["concept:name"] = concept_name """
+        __import_trace_attributes(log, case_id, trace, ns)
+        __import_events(log, case_id, trace, ns)
 
-            # parse all string attributes
-            for a in evnt.findall(ns+'string', namespace):
-                # we need to exclude the name of the event
-                #if a.attrib['key'] != "concept:name":
-                event[a.attrib['key']] = a.attrib['value']
+def __import_events(log: EventLog, case_id, root, ns):
+    for e in root.findall(ns+'event', NAMESPACES):
             
-            # parse all integer attributes
-            for a in evnt.findall(ns+'int', namespace):
-                event[a.attrib['key']] = int(a.attrib['value'])
-            
-            # parse all date attributes
-            for a in evnt.findall(ns+'date', namespace):
-                event[a.attrib['key']] = parse(a.attrib['value'])
-            
-            # parse all boolean attributes
-            for a in evnt.findall(ns+'boolean', namespace):
-                event[a.attrib['key']] = a.attrib['value'].lower() == 'true'
-            
-            log.add_event(event)
+        event = Event(case_id)
 
-    return log
+        for attr_type in ATTR_TYPES:
+            for attr in e.findall(ns+attr_type, NAMESPACES):
+                key, value = __get_xes_key_value(attr, attr_type)
+                event[key] = value
+
+        log.add_event(event)
+
+def __import_trace_attributes(log: EventLog, case_id, root, ns: str):
+    for attr_type in ATTR_TYPES:
+        for attr in root.findall(ns+attr_type, NAMESPACES):
+            key, value = __get_xes_key_value(attr, attr_type)
+            log.traces[case_id][key] = value
+
+def __get_xes_key_value(xes_attr, attr_type):
+    """
+        Parses XES Attributes depending on their respective data type.
+        
+        Returns the key, value as strings.
+    """
+    key = xes_attr.attrib['key']
+
+    if attr_type == 'date':
+        value = parse(xes_attr.attrib['value'])
+    elif attr_type == 'int':
+        value = int(xes_attr.attrib['value'])
+    elif attr_type == 'boolean':
+        value = xes_attr.attrib['value'].lower() == 'true'
+    else:
+        value = xes_attr.attrib['value']
+
+    return key, value 
+
+def __check_file_type(file) -> str:
+    """
+        Checks for possiblities of files to input in the importer. 
+        
+        Returns the needed filename as a string.
+    """
+
+    if isinstance(file, str):
+        filename = file
+        if filename.endswith('.gz'):
+            file = gzip.open(filename, 'rb')
+        else:
+            pass  # Just send the filename to xmltree.parse
+    else:
+        filename = file.name
+
+    return filename
+
+def __check_namespace(root, namespace: str) -> str:
+    """ 
+        Checks for a special case of namespaces that occur in some XES files.
+        They have NAMESPACES before their tags so "etree.find" can't normally find tags, e.g. bpi12 and bpi14 log.
+
+        Returns the needed namespace tag as a String.
+    """
+
+    if (NAMESPACES[namespace] in root.tag):
+        return 'xes:'
+    else:
+        return ''
 
 
+
+# EXPORTING 
 def export_to_xes(log: EventLog, target_path: str):
     """Exprots an EventLog structure as stored by pmlab_lite to an *.xes-file.
 
@@ -151,50 +214,3 @@ def __get_xes_attribute_value(xes_attr_type, log_attr_val):
         return str(log_attr_val).lower()
     else:
         return str(log_attr_val)
-
-def load_xes(file):
-    """A faster load of a log, which only stores the attributes name, timestamp, resource and transition per event.
-       The data structure of a log then looks as follows:
-        log = [ ... 
-                {'trace_id: 12, events: [ {'name': a, 'timestamp': b, 'resource': c, 'transition': d  }, {...}, ...] },
-                {'trace_id: 13, events: [ {'name': a, 'timestamp': b, 'resource': c, 'transition': d  }, {...}, ...] },
-                ... ]
-
-    Args:
-        file (string): path to a *.xes-file
-
-    Returns:
-        list: The log as a dats strucure described above
-    """
-
-    log = []
-    
-    tree = etree.parse(file)
-    data = tree.getroot()
-    
-    # find all traces
-    traces = data.findall('{http://www.xes-standard.org/}trace')
-    
-    for t in tqdm(traces):
-        trace_id = None
-        
-        # get trace id
-        for a in t.findall('{http://www.xes-standard.org/}string'):
-            if a.attrib['key'] == 'concept:name':
-                trace_id = a.attrib['value']
-        
-        events = []
-        # events
-        for event in t.iter('{http://www.xes-standard.org/}event'):
-            
-            e = {'name': None, 'timestamp': None, 'resource': None, 'transition': None}
-            
-            for a in event:
-                e[a.attrib['key'].split(':')[1]] = a.attrib['value']
-
-            events.append(e)
-        
-        # add trace to log
-        log.append({'trace_id': trace_id, 'events': events})
-
-    return log

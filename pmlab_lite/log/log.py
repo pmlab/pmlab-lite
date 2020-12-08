@@ -5,13 +5,13 @@ class Event(dict):
     """An event is the minimum observable unit of information. It actually is a dictionary with, at least, three attributes: 'case_id', 'activity_name' and 'timestamp'."""
 
     def __init__(self, case_id):
-        self["case_id"] = case_id
+        self["case:id"] = case_id
 
     def get_activity_name(self):
         return self["concept:name"]
 
     def get_case_id(self):
-        return self["case_id"]
+        return self["case:id"]
 
     def get_timestamp(self):
         return self['time:timestamp']
@@ -39,18 +39,22 @@ class EventLog(EventCollection):
 
     def __init__(self):
         self.events = list() # events are still stored as list of events
-        self.traces = dict() # traces are stored as dictionary of case id -> list of events
-        self.A = set() 
-        self.classifiers = dict() 
+        self.traces = dict() # traces have attributes and store events as under trace['events'] -> list of events
+        self.A = set()
+        self.classifiers = dict() # stores the classifiers, i.e. an identity for events
+        self.globals = dict() # stores the globally defined attributes, i.e attributes every trace/event must contain
+        self.extensions = dict() # stores log extensions
+        self.metadata = dict() # stores log attributes
 
     def add_event(self, event: Event):
         self.events.append(event)
-        self.traces[event.get_case_id()] = self.traces.get(event.get_case_id(), []) + [event] 
+        case_id = event.get_case_id()
+        self.traces[case_id] = self.traces.get(case_id, {})
+        self.traces[case_id]['events'] = self.traces[case_id].get('events', []) + [event] 
         return self
 
-    def add_trace(self, case_id, activity_names: []):
-        for activity_name in activity_names:
-            self.add_event(Event(activity_name, case_id))
+    def add_trace(self, case_id):
+        self.traces[case_id] = {}
         return self
 
     def activity_set(self):
@@ -60,7 +64,11 @@ class EventLog(EventCollection):
             self.A.add(event['concept:name'])
 
     def get_traces(self):
-        return self.traces.values()
+        """ Returns the list of events associated to the traces. """
+        traces_only = []
+        for key in self.traces:
+            traces_only.append(self.traces[key]['events'])
+        return traces_only
 
     def get_trace(self, case_id):
         return self.traces[case_id]
@@ -94,7 +102,7 @@ class EventLog(EventCollection):
 
     def print_traces(self, start: int=0, num: int=1): #maybe change to print global attributes so printing is flexible to different logs
         """
-            Prints the traces of the log from 'start' to 'end'. 
+            Prints specified number of traces from the log given the start index. 
             For instance to print 3 traces starting from the 4th trace: log.print_traces(4, 3)
 
             Args:
