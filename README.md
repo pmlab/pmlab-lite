@@ -23,7 +23,7 @@ $ pip3 install pmlab-lite
 ```
 
 ### Testing
-In the test folder involved parties can _create test files_ and also _run the test files_.
+In the test folder involved parties can _create test files_ and _run the test files_.
 
 Create test-files in the test-directory following the naming convention: *test_\*.py*
 ```sh
