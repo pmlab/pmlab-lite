@@ -1,15 +1,28 @@
-from dateutil.parser import parse
-import gzip
-from lxml import etree
 from pmlab_lite.log import Event, EventLog
 from . import constants as  c
-from tqdm import tqdm
+
+from dateutil.parser import parse #this is slow compared to the following two
+import ciso8601
+from datetime import datetime # datetime.fromisoformat is fast, but only implemented from >=3.7
 import re
+import gzip
+from lxml import etree
+from tqdm import tqdm
+import logging
 
-NAMESPACES = {'xes': 'http://www.xes-standard.org/'}
-ATTR_TYPES = ['string', 'date', 'boolean', 'int']
+__START = c.START
+__END = c.END
+__actions = (__START, __END)
 
-def import_from_xes(file):
+"""
+    Note: 
+    The code for importing (__parse_xes_file, __parse_attribute) is inspired and partly taken from the open source process minind library pm4py (https://pm4py.fit.fraunhofer.de).
+    Thanks to all involved researchers / developers, especially Alessandro Berti and Sebastiaan van Zelst, for providing the well documented 
+    and written code and providing this as an open source project. 
+"""
+
+
+def import_xes(file):
     """
         Reads a *.xes-file and returns it as a log data structure. 
 
@@ -20,105 +33,19 @@ def import_from_xes(file):
             log: the log represented as a data structure as in pmlab_lite.log
     """
 
-    filename = __check_file_type(file)
-    log = EventLog()
-    tree = etree.parse(file)
-    root = tree.getroot()
-    ns = __check_namespace(root, 'xes')
+    print("Processing log...")
 
-    __import_extensions(log, root,ns)
-    __import_globals(log, root,ns)
-    __import_classifiers(log, root, ns)
-    __import_log_attributes(log, root, ns)
-    __import_traces(log, root, ns)
+    file = __check_file_type(file)
+    f = open(file, "rb")
+    
+    context = etree.iterparse(f, events=__actions)
+    tree = {} #for keeping only what we need to know (we delete elements in iterparse iterator to keep memory usage minimal)
+    log = __parse_xes_file(context, tree)
+
+    del context
+    f.close()
 
     return log
-
-def __import_extensions(log: EventLog, root, ns: str):
-    for ext in root.findall(ns+'extension', NAMESPACES):
-        log.extensions[ext.attrib['name']] = {'prefix': ext.attrib['prefix'], 'uri': ext.attrib['uri']}
-
-def __import_globals(log: EventLog, root, ns: str):
-    globals = root.findall(ns+'global', NAMESPACES)
-    for g in globals:
-        scope = g.attrib['scope']
-        log.globals[scope] = {}
-        for attr_type in ATTR_TYPES:
-            for attr in g.findall(ns+attr_type, NAMESPACES):
-                key, value = __get_xes_key_value(attr, attr_type)
-                log.globals[scope][key] = value
-
-def __import_classifiers(log: EventLog, root, ns: str):
-    classifiers = root.findall(ns+'classifier', NAMESPACES)
-
-    if classifiers:
-        for classifier in classifiers:
-            name = classifier.attrib['name']
-            attributes = classifier.attrib['keys']
-            #resolve special case: wo 
-            if "'" in attributes:
-                attributes = re.findall(r'\'(.*?)\'', attributes)
-            else:
-                attributes = attributes.split()
-            log.classifiers[name] = attributes 
-
-def __import_log_attributes(log: EventLog, root, ns: str):
-    for attr_type in ATTR_TYPES:
-        for attr in root.findall(ns+attr_type, NAMESPACES):
-            key, value = __get_xes_key_value(attr, attr_type)
-            log.metadata[key] = value
-
-def __import_traces(log: EventLog, root, ns: str):
-    traces = root.findall(ns+'trace', NAMESPACES)
-
-    for trace in tqdm(traces):
-        
-        # extract the case id
-        if trace.find(ns+'string[@key="concept:name"]', NAMESPACES) is not None:
-            case_id = trace.find(ns+'string[@key="concept:name"]', NAMESPACES).attrib['value']
-        else:
-            case_id = None
-        log.add_trace(case_id)
-        
-        __import_trace_attributes(log, case_id, trace, ns)
-        __import_events(log, case_id, trace, ns)
-
-def __import_trace_attributes(log: EventLog, case_id, root, ns: str):
-    for attr_type in ATTR_TYPES:
-        for attr in root.findall(ns+attr_type, NAMESPACES):
-            key, value = __get_xes_key_value(attr, attr_type)
-            log.traces[case_id][key] = value
-
-def __import_events(log: EventLog, case_id, root, ns):
-    for e in root.findall(ns+'event', NAMESPACES):
-            
-        event = Event(case_id)
-
-        for attr_type in ATTR_TYPES:
-            for attr in e.findall(ns+attr_type, NAMESPACES):
-                key, value = __get_xes_key_value(attr, attr_type)
-                event[key] = value
-
-        log.add_event(event)
-
-def __get_xes_key_value(xes_attr, attr_type):
-    """
-        Parses XES Attributes depending on their respective data type.
-        
-        Returns the key, value as strings.
-    """
-    key = xes_attr.attrib['key']
-
-    if attr_type == 'date':
-        value = parse(xes_attr.attrib['value'])
-    elif attr_type == 'int':
-        value = int(xes_attr.attrib['value'])
-    elif attr_type == 'boolean':
-        value = xes_attr.attrib['value'].lower() == 'true'
-    else:
-        value = xes_attr.attrib['value']
-
-    return key, value 
 
 def __check_file_type(file) -> str:
     """
@@ -138,18 +65,144 @@ def __check_file_type(file) -> str:
 
     return filename
 
-def __check_namespace(root, namespace: str) -> str:
-    """ 
-        Checks for a special case of namespaces that occur in some XES files.
-        They have NAMESPACES before their tags so "etree.find" can't normally find tags, e.g. bpi12 and bpi14 log.
+def __clear_element(element, tree):
+    """ Deletes an element from tree, to avoid memory explosion, when not needed anymore"""
+    if element in tree:
+      del tree[element]
+    element.clear()
+    while element.getprevious() is not None:
+      del element.getparent()[0]
 
-        Returns the needed namespace tag as a String.
-    """
+def __parse_date_ciso(date_str: str):
+    """ Parses a date string from an xes log file to a datetime object. Uses external ciso library."""
 
-    if (NAMESPACES[namespace] in root.tag):
-        return 'xes:'
+    return ciso8601.parse_datetime(date_str)
+
+def __parse_attribute(elem, store, key, value, tree):
+  #store is basically the parent and can be: 
+  
+  if len(elem.getchildren()) == 0:  #elem is leaf node, i.e. no further 
+    
+    if type(store) is list:
+      # changes to the store of lists: not dictionaries anymore
+      # but pairs of key-values.
+      store.append((key, value))
     else:
-        return ''
+      store[key] = value
+  
+  else:
+    if elem.getchildren()[0].tag.endswith(c.VLS):
+      store[key] = {c.VAL: value, c.CLN: list()}
+      tree[elem] = store[key][c.CLN]
+      tree[elem.getchildren()[0]] = tree[elem]
+    else:
+      store[key] = {c.VAL: value, c.CLN: dict()}
+      tree[elem] = store[key][c.CLN]
+  
+  return tree
+
+def __parse_xes_file(context, tree):
+    
+    log = None
+    trace_id = None
+    event = None
+    trace_count = 0 #for trace_id
+    
+    for action, elem in tqdm(context):
+  
+        if action == __START:  # starting to read
+
+            parent = tree[elem.getparent()] if elem.getparent() in tree else None
+
+            if elem.tag.endswith(c.STR):
+              if parent is not None:
+                tree = __parse_attribute(elem, parent, elem.get(c.KEY), elem.get(c.VAL), tree)
+              continue
+          
+            elif elem.tag.endswith(c.DTE):
+              try:
+                date = __parse_date_ciso(elem.get(c.VAL))
+                tree = __parse_attribute(elem, parent, elem.get(c.KEY), date, tree)
+              except TypeError:
+                logging.info("failed to parse date: " + str(elem.get(c.VAL)))
+              except ValueError:
+                logging.info("failed to parse date: " + str(elem.get(c.VAL)))
+              continue
+          
+            elif elem.tag.endswith(c.EVE):
+              if event is not None:
+                raise SyntaxError('file contains <event> in another <event> tag')
+              if trace_id is None:
+                raise SyntaxError('file contains a <event> element outside of a <trace> element (trace_id is None)')
+              event = Event(trace_id)
+              tree[elem] = event
+              continue
+          
+            elif elem.tag.endswith(c.TRC):
+              if trace_id is not None:
+                raise SyntaxError('file contains <trace> in another <trace> tag')
+              trace_count += 1
+              trace_id = trace_count
+              log.add_trace(trace_id)
+              tree[elem] = log.traces[trace_id]
+              continue
+
+            # rest of elif's belong here
+
+            elif elem.tag.endswith(c.EXT):
+              if log is None:
+                raise SyntaxError('extension found outside of <log> tag')
+              if elem.get(c.NME) is not None and elem.get(c.PRX) is not None and elem.get(c.URI) is not None:
+                log.extensions[elem.attrib[c.NME]] = {c.PRX: elem.attrib[c.PRX], c.URI: elem.attrib[c.URI]}
+              continue  
+          
+            elif elem.tag.endswith(c.GLB):
+              if log is None:
+                raise SyntaxError('global found outside of <log> tag')
+              if elem.get(c.SCP) is not None:
+                log.globals[elem.attrib[c.SCP]] = {}
+                tree[elem] = log.globals[elem.get(c.SCP)]
+              continue  
+          
+            elif elem.tag.endswith(c.CLS):
+              if log is None:
+                raise SyntaxError('classifier found outside of <log> tag')
+              if elem.get(c.KYS) is not None:
+                name, attributes  = elem.attrib[c.NME], elem.attrib[c.KYS]
+                # resolve special case; refactor with __parse_classifier
+                if "'" in attributes:
+                  attributes = re.findall(r'\'(.*?)\'', attributes)
+                else:
+                  attributes = attributes.split()
+                log.classifiers[name] = attributes
+              continue  
+          
+            elif elem.tag.endswith(c.LOG):
+              if log is not None:
+                raise SyntaxError('file contains > 1 <log> tags')
+              log = EventLog()
+              tree[elem] = log.attributes
+              continue 
+        
+        elif action == __END:
+        
+            __clear_element(elem, tree)
+
+            if elem.tag.endswith(c.EVE):
+              if trace_id is not None: # here originally was written "if trace is not None", we dont use traces as objects though
+                log.add_event(event)
+                event = None
+              continue 
+          
+            elif elem.tag.endswith(c.TRC):
+              trace_id = None
+              continue 
+          
+            elif elem.tag.endswith(c.LOG):
+              continue
+
+    return log
+
 
 
 def export_to_xes(log: EventLog, target_path: str):
@@ -193,7 +246,7 @@ def __export_classifiers(log: EventLog, root):
         classifier.set('keys', " ".join(classi_attributes))
 
 def __export_log_attributes(log: EventLog, root):
-    __export_attributes(log.metadata, root)
+    __export_attributes(log.attributes, root)
 
 def __export_traces(log: EventLog, root):
     for case_id in log.traces.keys():
