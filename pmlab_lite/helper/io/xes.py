@@ -15,19 +15,19 @@ __END = c.END
 __actions = (__START, __END)
 
 """
-    Note: 
+    Note:
     The code for importing (__parse_xes_file, __parse_attribute) is inspired and partly taken from the open source process minind library pm4py (https://pm4py.fit.fraunhofer.de).
-    Thanks to all involved researchers / developers, especially Alessandro Berti and Sebastiaan van Zelst, for providing the well documented 
-    and written code and providing this as an open source project. 
+    Thanks to all involved researchers / developers, especially Alessandro Berti and Sebastiaan van Zelst, for providing the well documented
+    and written code and providing this as an open source project.
 """
 
 
 def import_xes(file):
     """
-        Reads a *.xes-file and returns it as a log data structure. 
+        Reads a *.xes-file and returns it as a log data structure.
 
         Args:
-            file: string literal path to a *.xes-file 
+            file: string literal path to a *.xes-file
 
         Returns:
             log: the log represented as a data structure as in pmlab_lite.log
@@ -37,7 +37,7 @@ def import_xes(file):
 
     file = __check_file_type(file)
     f = open(file, "rb")
-    
+
     context = etree.iterparse(f, events=__actions)
     tree = {} #for keeping only what we need to know (we delete elements in iterparse iterator to keep memory usage minimal)
     log = __parse_xes_file(context, tree)
@@ -49,8 +49,8 @@ def import_xes(file):
 
 def __check_file_type(file) -> str:
     """
-        Checks for possiblities of files to input in the importer. 
-        
+        Checks for possiblities of files to input in the importer.
+
         Returns the needed filename as a string.
     """
 
@@ -70,8 +70,11 @@ def __clear_element(element, tree):
     if element in tree:
       del tree[element]
     element.clear()
-    while element.getprevious() is not None:
-      del element.getparent()[0]
+    if element.getprevious() is not None:
+        try:
+            del element.getparent()[0]
+        except TypeError:
+            pass
 
 def __parse_date_ciso(date_str: str):
     """ Parses a date string from an xes log file to a datetime object. Uses external ciso library."""
@@ -79,17 +82,17 @@ def __parse_date_ciso(date_str: str):
     return ciso8601.parse_datetime(date_str)
 
 def __parse_attribute(elem, store, key, value, tree):
-  #store is basically the parent and can be: 
-  
-  if len(elem.getchildren()) == 0:  #elem is leaf node, i.e. no further 
-    
+  #store is basically the parent and can be:
+
+  if len(elem.getchildren()) == 0:  #elem is leaf node, i.e. no further
+
     if type(store) is list:
       # changes to the store of lists: not dictionaries anymore
       # but pairs of key-values.
       store.append((key, value))
     else:
       store[key] = value
-  
+
   else:
     if elem.getchildren()[0].tag.endswith(c.VLS):
       store[key] = {c.VAL: value, c.CLN: list()}
@@ -98,18 +101,18 @@ def __parse_attribute(elem, store, key, value, tree):
     else:
       store[key] = {c.VAL: value, c.CLN: dict()}
       tree[elem] = store[key][c.CLN]
-  
+
   return tree
 
 def __parse_xes_file(context, tree):
-    
+
     log = None
     trace_id = None
     event = None
     trace_count = 0 #for trace_id
-    
+
     for action, elem in tqdm(context):
-  
+
         if action == __START:  # starting to read
 
             parent = tree[elem.getparent()] if elem.getparent() in tree else None
@@ -118,7 +121,7 @@ def __parse_xes_file(context, tree):
               if parent is not None:
                 tree = __parse_attribute(elem, parent, elem.get(c.KEY), elem.get(c.VAL), tree)
               continue
-          
+
             elif elem.tag.endswith(c.DTE):
               try:
                 date = __parse_date_ciso(elem.get(c.VAL))
@@ -128,7 +131,7 @@ def __parse_xes_file(context, tree):
               except ValueError:
                 logging.info("failed to parse date: " + str(elem.get(c.VAL)))
               continue
-          
+
             elif elem.tag.endswith(c.EVE):
               if event is not None:
                 raise SyntaxError('file contains <event> in another <event> tag')
@@ -137,7 +140,7 @@ def __parse_xes_file(context, tree):
               event = Event(trace_id)
               tree[elem] = event
               continue
-          
+
             elif elem.tag.endswith(c.TRC):
               if trace_id is not None:
                 raise SyntaxError('file contains <trace> in another <trace> tag')
@@ -154,16 +157,16 @@ def __parse_xes_file(context, tree):
                 raise SyntaxError('extension found outside of <log> tag')
               if elem.get(c.NME) is not None and elem.get(c.PRX) is not None and elem.get(c.URI) is not None:
                 log.extensions[elem.attrib[c.NME]] = {c.PRX: elem.attrib[c.PRX], c.URI: elem.attrib[c.URI]}
-              continue  
-          
+              continue
+
             elif elem.tag.endswith(c.GLB):
               if log is None:
                 raise SyntaxError('global found outside of <log> tag')
               if elem.get(c.SCP) is not None:
                 log.globals[elem.attrib[c.SCP]] = {}
                 tree[elem] = log.globals[elem.get(c.SCP)]
-              continue  
-          
+              continue
+
             elif elem.tag.endswith(c.CLS):
               if log is None:
                 raise SyntaxError('classifier found outside of <log> tag')
@@ -175,29 +178,29 @@ def __parse_xes_file(context, tree):
                 else:
                   attributes = attributes.split()
                 log.classifiers[name] = attributes
-              continue  
-          
+              continue
+
             elif elem.tag.endswith(c.LOG):
               if log is not None:
                 raise SyntaxError('file contains > 1 <log> tags')
               log = EventLog()
               tree[elem] = log.attributes
-              continue 
-        
+              continue
+
         elif action == __END:
-        
+
             __clear_element(elem, tree)
 
             if elem.tag.endswith(c.EVE):
               if trace_id is not None: # here originally was written "if trace is not None", we dont use traces as objects though
                 log.add_event(event)
                 event = None
-              continue 
-          
+              continue
+
             elif elem.tag.endswith(c.TRC):
               trace_id = None
-              continue 
-          
+              continue
+
             elif elem.tag.endswith(c.LOG):
               continue
 
@@ -212,7 +215,7 @@ def export_to_xes(log: EventLog, target_path: str):
         log (EventLog): The Event Log to be exported.
         target_path (str): The path- and filename of the exported *.xes-file, e.g. "some_file.xes".
     """
-    
+
     root = etree.Element('log')
 
     __export_extensions(log, root)
@@ -241,7 +244,7 @@ def __export_classifiers(log: EventLog, root):
     for classi in log.classifiers.keys():
         classi_attributes = ['\'' + attr + '\'' if ' ' in attr else attr for attr in log.classifiers[classi]]
         classifier = etree.SubElement(root, 'classifier')
-        
+
         classifier.set('name', classi)
         classifier.set('keys', " ".join(classi_attributes))
 

@@ -10,7 +10,7 @@ import heapq
 
 
 class A_Star(Alignment):
-	
+
 	def __init__(self, synchronous_product, trace, heuristic: str='lp', alignments: int=1):
 		Alignment.__init__(self)
 
@@ -18,7 +18,7 @@ class A_Star(Alignment):
 		self.incidence_matrix     = v.incidence_matrix     = synchronous_product.incidence_matrix()
 		self.transitions_by_index = v.transitions_by_index = synchronous_product.transitions_by_index()
 		self.final_mark_vector    = v.final_mark_vector    = synchronous_product.get_final_marking()
-		
+
 		init_node = Node(synchronous_product.get_init_marking(), None, 0)
 		init_node.remaining_trace = trace
 		init_node.find_active_transitions(self.incidence_matrix)
@@ -26,9 +26,9 @@ class A_Star(Alignment):
 
 		self.closed_list = []																	#initialise closed set
 		self.open_list = [ (init_node.total_cost, init_node) ]									#initialise open set
-		heapq.heapify(self.open_list)	
+		heapq.heapify(self.open_list)
 
-		
+
 	def search(self):
 		while len(self.open_list) > 0:
 			heapq.heapify(self.open_list)
@@ -41,7 +41,7 @@ class A_Star(Alignment):
 			else:
 				self.__investigate(current_node)
 
-		
+
 		self.calc_results()
 		#return self.alignments
 
@@ -63,21 +63,21 @@ class A_Star(Alignment):
 			#make child node and update it's marking, i.e. the current marking after transition i was fired
 			child_node = Node(self.incidence_matrix[:, i] + node.marking_vector, node, node.number+1)
 			child_node.find_active_transitions(self.incidence_matrix)
-			
+
 			# --Synchronous move--
 			if self.transitions_by_index[i].endswith("synchronous"):
-				
+
 				#update it's remaining trace
 				child_node.remaining_trace = node.remaining_trace[1:]
 				child_node.alignment = node.alignment + [ (self.transitions_by_index[i][:-12], self.transitions_by_index[i][:-12] ) ]
-				
+
 			# --Model       move--
 			elif self.transitions_by_index[i].endswith("model"):
-				
+
 				#update it's remaining trace
 				child_node.remaining_trace = node.remaining_trace[:]
 				child_node.alignment = node.alignment + [ ( self.transitions_by_index[i][:-6], c.BLANK ) ]
-					
+
 			# --Log         move--
 			elif self.transitions_by_index[i].endswith("log"):
 
@@ -87,28 +87,28 @@ class A_Star(Alignment):
 
 			#update the child nodes costs
 			child_node.update_costs(self.heuristic)
-	
+
 			#check whether it's in the closed list or it's a cheaper version of same marking
 			self.__add_node(child_node)
 
 	#deciding on whether or not to add a node to the open list
 	def __add_node(self,node):
-		
+
 		#checking whether it is in the closed list
 		ind = [k for k in range( len(self.closed_list) ) if np.array_equal(node.marking_vector, self.closed_list[k].marking_vector) ] #ind is a list like [12,34,10]
 		if len(ind) > 0:
 			pass
-		
+
 		#checking whether it is in the open list, update if we found it
 		else:
 			ind = [k for k in range(len(self.open_list)) if np.array_equal(node.marking_vector, self.open_list[k][1].marking_vector)]
-			
+
 			#at least once in open list
 			if ind:
 				for k in ind:
-					if self.open_list[k][1].cost_from_start > node.cost_from_start:	
+					if self.open_list[k][1].cost_from_start > node.cost_from_start:
 						self.open_list[k] = [node.total_cost, node]
-					else: 
+					else:
 						continue
 			#not in open list yet
 			else:

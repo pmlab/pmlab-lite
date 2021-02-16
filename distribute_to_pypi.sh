@@ -15,5 +15,5 @@ python3 setup.py sdist bdist_wheel
 # check and upload to twine
 # exchange twine with $twinePath, if not working
 echo $twinePath
-$twinePath check dist/*
-$twinePath upload dist/*
+twine check dist/*
+twine upload dist/*

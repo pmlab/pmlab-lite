@@ -31,8 +31,8 @@ def get_marking(marking: int):
 	else:
 		return '4'
 
-def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
-				   format="pdf"):
+def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net", format='pdf'):
+	
 	"""
 	This function transforms the given Petri net structure
 	into DOT notation and returns it as a digraph object. Call
@@ -45,7 +45,7 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 	Retruns:
 		Digraph object
 	"""
-	
+
 	dot = Digraph(name=filename, format=format)
 	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35",
 			 ranksep="0.25 equally")
@@ -58,11 +58,11 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net",
 		if key != 'tau' and not key.endswith("_synchronous"):
 			for t in values:
 				dot.node(str(t), key)
-					
+
 	# draw sync transitions
 	dot.attr('node', shape='box', penwidth="1", fontsize="10",
 			 fontname="Helvetica", color='green')
-			 
+
 	for key, values in input_net.transitions.items():
 		if key.endswith("_synchronous"):
 			for t in values:
@@ -106,7 +106,7 @@ def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronou
 		label = get_marking(input_net.marking[id])
 		dot.node(str(p), label=label, xlabel=str(p), shape="circle")
 
-	#draw transitions	
+	#draw transitions
 	for i in range(0,len(transitions_by_index)):
 		if transitions_by_index[i].endswith("_model"):
 			dot.node( str(-(i+1)), "(" + transitions_by_index[i][:-6] + "," + BLANK + ")",shape="rect", style='unfilled', color=color[0])
@@ -147,7 +147,7 @@ def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
     dot = Digraph(name=filename, format=format)
     dot.attr(rankdir='LR', fontsize="3", nodesep="0.35",
 			 ranksep="0.25 equally")
-    
+
     #draw nodes
     dot.attr('node', shape='circle', penwidth='1', fontsize='12',
 			 fontname='Helvetica', style='filled')
@@ -160,7 +160,7 @@ def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
             fontcolor = 'white'
         #node is the final marking
         if ( np.array_equal(node.marking_vector, final_mark_vector) ):
-            dot.node(str(node.marking_vector), label="H = " + str(round(float(node.cost_to_end),3)) + "\nG = " + str(round(float(node.cost_from_start),3)), 
+            dot.node(str(node.marking_vector), label="H = " + str(round(float(node.cost_to_end),3)) + "\nG = " + str(round(float(node.cost_from_start),3)),
                 color=colors[1])
         #node is the initial marking
         elif ( np.array_equal(node.marking_vector, initial_mark_vector) ):
@@ -168,7 +168,7 @@ def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
                 color=colors[0])
         #any other node
         else:
-            dot.node(str(node.marking_vector), label="H = " + str(round(float(node.cost_to_end),3)) + "\nG = " + str(round(float(node.cost_from_start),3)), 
+            dot.node(str(node.marking_vector), label="H = " + str(round(float(node.cost_to_end),3)) + "\nG = " + str(round(float(node.cost_from_start),3)),
                 color=colors[2]+str(counter), fontcolor=fontcolor)
         if counter > 0:
             counter -= 1
@@ -208,8 +208,7 @@ def draw_graph(graph: Graph, filename="graph", format="pdf", render=False,
 
 	return dot
 
-def draw_process_tree(tree: ProcessTree, name='process_tree', format='png',
-					  render=True):
+def draw_process_tree(tree: ProcessTree, name='process_tree', format='png', render=True):
 	"""
 	This function transforms the given process tree
 	into DOT notation renders it and returns it as a digraph object.
