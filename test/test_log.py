@@ -11,20 +11,16 @@ rl_names = ['BPIC12.xes', 'BPIC13_closed_problems.xes', 'BPIC13_incidents.xes', 
 a_path = '../XES_Certification/Artificial/'
 rl_path = '../XES_Certification/Real-life/'
 
-a_log = a_path + a_names[1]
-rl_log = rl_path + rl_names[9]
+a_log = a_path + a_names[2]
+rl_log = rl_path + rl_names[-2]
 
-
-# old log
-#log = xes.import_from_xes(a_log)
-
-# new log
-new_log = xes.import_xes(a_log)
+# new import
+new_log = xes.import_xes(rl_log)
 
 # pm4py log
 from pm4py.objects.log.importer.xes import importer as xes_importer
 
-#test_log = xes_importer.apply(rl_log, variant=xes_importer.Variants.ITERPARSE)
+#test_log = xes_importer.apply(a_log, variant=xes_importer.Variants.ITERPARSE)
 
 # compare extensions --> success
 """ print()
@@ -102,3 +98,11 @@ print("Events are the are equal:", events == new_events, "(besides case_id)") ""
 
 # test exporting
 #xes.export_to_xes(new_log, 'X2.xes')
+pprint(new_log.events[9])
+print()
+for val in new_log.events[9].values():
+    print(val, type(val))
+# print(new_log.events[9]['Accepted'], type(new_log.events[10]['Accepted']))
+# print(new_log.events[9]['CreditScore'], type(new_log.events[10]['CreditScore']))
+# print(new_log.events[9]['MonthlyCost'], type(new_log.events[10]['MonthlyCost']))
+# print(new_log.events[9]['OfferedAmount'], type(new_log.events[10]['OfferedAmount']))

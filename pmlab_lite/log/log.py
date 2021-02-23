@@ -4,14 +4,11 @@ from datetime import datetime
 class Event(dict):
     """An event is the minimum observable unit of information. It actually is a dictionary with, at least, three attributes: 'case_id', 'activity_name' and 'timestamp'."""
 
-    def __init__(self, case_id):
-        self["case:id"] = case_id
+    def __init__(self):
+        return None
 
     def get_activity_name(self):
         return self.get_value("concept:name")
-
-    def get_case_id(self):
-        return self.get_value("case:id")
 
     def get_timestamp(self):
         return self['time:timestamp'] #self.get_value("time:timestamp")
@@ -52,15 +49,14 @@ class EventLog(EventCollection):
         self.extensions = dict() # stores log extensions
         self.attributes = dict() # stores log attributes
 
-    def add_event(self, event: Event):
+    def add_event(self, event: Event, trace_idx: int):
         self.events.append(event)
-        case_id = event.get_case_id()
-        self.traces[case_id] = self.traces.get(case_id, {})
-        self.traces[case_id]['events'] = self.traces[case_id].get('events', []) + [event]
+        self.traces[trace_idx] = self.traces.get(trace_idx, {})
+        self.traces[trace_idx]['events'] = self.traces[trace_idx].get('events', []) + [event]
         return self
 
-    def add_trace(self, case_id):
-        self.traces[case_id] = {}
+    def add_trace(self, trace_idx: int):
+        self.traces[trace_idx] = {}
         return self
 
     def get_traces(self):
@@ -108,7 +104,7 @@ class EventLog(EventCollection):
 
     def __check_standard_globals(self) -> bool:
         """ Checks if the standatd attributes are present in the global property for events in the log."""
-        
+
         if {'concept:name', 'time:timestamp', 'lifecycle:transition'} <= set(self.globals['event']):
             return True
         else:
@@ -150,42 +146,42 @@ class EventLog(EventCollection):
             self.__print_three_attributes(list(self.globals['event'].keys())[:1], start, num)
 
         else:
-            print("The given log neither does not have any global attributes. Please provide the attributes to print as 'attributes' in the function call.")
+            print("The given log does not have any global attributes. Please provide the attributes to print as 'attributes' in the function call.")
 
     def __print_standard_event_attributes(self, start: int=0, num: int=1):
         self.__print_three_attributes(['concept:name', 'lifecycle:transition', 'time:timestamp'], start, num)
 
     def __print_one_attribute(self, attributes, start: int=0, num: int=1):
 
-        traces_in_range = [self.traces[case_id]['events'] for case_id in self.traces][start:start+num]
+        traces_in_range = self.get_traces()[start:start+num]
 
-        for i in range(len(traces_in_range)):
-            print("TRACE_ID:",traces_in_range[i][0]['case:id'], "(trace number", i+start+1, ")")
+        for i, trace in enumerate(traces_in_range):
+            print("TRACE_ID:",self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
             print(" ", attributes[0])
-            for event in traces_in_range[i]:
+            for event in trace:
                 print(">", event.get_value(attributes[0]))
             print()
 
     def __print_two_attributes(self, attributes, start: int=0, num: int=1):
 
-        traces_in_range = [self.traces[case_id]['events'] for case_id in self.traces][start:start+num]
+        traces_in_range = self.get_traces()[start:start+num]
 
-        for i in range(len(traces_in_range)):
-            print("TRACE_ID:",traces_in_range[i][0]['case:id'], "(trace number", i+start+1, ")")
-            print("  {:24}{:36}".format(attributes[0], attributes[1]))
-            for event in traces_in_range[i]:
-                print("> {:24}{:36}".format(event.get_value(attributes[0]), event.get_value(attributes[1])))
+        for i, trace in enumerate(traces_in_range):
+            print("TRACE_ID:",self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
+            print("  {:27}{:36}".format(attributes[0], attributes[1]))
+            for event in trace:
+                print("> {:27}{:36}".format(event.get_value(attributes[0]), event.get_value(attributes[1])))
             print()
 
     def __print_three_attributes(self, attributes, start: int=0, num: int=1):
-        traces_in_range = [self.traces[case_id]['events'] for case_id in self.traces][start:start+num]
+        traces_in_range = self.get_traces()[start:start+num]
 
-        for i in range(len(traces_in_range)):
-            print("TRACE_ID:",traces_in_range[i][0]['case:id'], "(trace number", i+start+1, ")")
-            print("  {:24}{:36}{:15}".format(attributes[0], attributes[1], attributes[2]))
-            for event in traces_in_range[i]:
-                print("> {:24}{:36}{:15}".format(event.get_value(attributes[0]), event.get_value(attributes[1]), event.get_value(attributes[2])))
-            print()
+        for i, trace in enumerate(traces_in_range):
+            print("TRACE_ID:",self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
+            print("  {:27}{:36}{:15}".format(attributes[0], attributes[1], attributes[2]))
+            for event in trace:
+                print("> {:27}{:36}{:15}".format(event.get_value(attributes[0]), event.get_value(attributes[1]), event.get_value(attributes[2])))
+        print()
 
     def print(self):
         """Prints the whole log."""

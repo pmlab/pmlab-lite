@@ -107,7 +107,7 @@ def __parse_attribute(elem, store, key, value, tree):
 def __parse_xes_file(context, tree):
 
     log = None
-    trace_id = None
+    trace_idx = None
     event = None
     trace_count = 0 #for trace_id
 
@@ -132,25 +132,47 @@ def __parse_xes_file(context, tree):
                 logging.info("failed to parse date: " + str(elem.get(c.VAL)))
               continue
 
+            elif elem.tag.endswith(c.BOL):
+                if parent is not None:
+                    str_val = str(elem.get(c.VAL)).lower()
+                    if str_val == 'true':
+                        bool_val = True
+                    elif str_val == 'false':
+                        bool_val = False
+                    else:
+                        raise ValueError("failed to parse bool: " + str(elem.get(c.VAL)))
+                    tree = __parse_attribute(elem, parent, elem.get(c.KEY), bool_val, tree)
+                continue
+
+            elif elem.tag.endswith(c.INT):
+                if parent is not None:
+                    int_val = int(elem.get(c.VAL))
+                    tree = __parse_attribute(elem, parent, elem.get(c.KEY), int_val, tree)
+                continue
+
+            elif elem.tag.endswith(c.FLT):
+                if parent is not None:
+                    float_val = float(elem.get(c.VAL))
+                    tree = __parse_attribute(elem, parent, elem.get(c.KEY), float_val, tree)
+                continue
+
             elif elem.tag.endswith(c.EVE):
               if event is not None:
                 raise SyntaxError('file contains <event> in another <event> tag')
-              if trace_id is None:
+              if trace_idx is None:
                 raise SyntaxError('file contains a <event> element outside of a <trace> element (trace_id is None)')
-              event = Event(trace_id)
+              event = Event()
               tree[elem] = event
               continue
 
             elif elem.tag.endswith(c.TRC):
-              if trace_id is not None:
+              if trace_idx is not None:
                 raise SyntaxError('file contains <trace> in another <trace> tag')
+              trace_idx = trace_count
               trace_count += 1
-              trace_id = trace_count
-              log.add_trace(trace_id)
-              tree[elem] = log.traces[trace_id]
+              log.add_trace(trace_idx)
+              tree[elem] = log.traces[trace_idx]
               continue
-
-            # rest of elif's belong here
 
             elif elem.tag.endswith(c.EXT):
               if log is None:
@@ -192,13 +214,13 @@ def __parse_xes_file(context, tree):
             __clear_element(elem, tree)
 
             if elem.tag.endswith(c.EVE):
-              if trace_id is not None: # here originally was written "if trace is not None", we dont use traces as objects though
-                log.add_event(event)
+              if trace_idx is not None:
+                log.add_event(event, trace_idx)
                 event = None
               continue
 
             elif elem.tag.endswith(c.TRC):
-              trace_id = None
+              trace_idx = None
               continue
 
             elif elem.tag.endswith(c.LOG):
