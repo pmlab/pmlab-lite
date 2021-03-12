@@ -14,6 +14,9 @@ class A_Star(Alignment):
 	def __init__(self, synchronous_product, trace, heuristic: str='lp', alignments: int=1):
 		Alignment.__init__(self)
 
+		v.synchronous_product = synchronous_product
+		v.trace = trace
+
 		self.heuristic = Heuristic(heuristic)
 		self.incidence_matrix     = v.incidence_matrix     = synchronous_product.incidence_matrix()
 		self.transitions_by_index = v.transitions_by_index = synchronous_product.transitions_by_index()

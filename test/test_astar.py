@@ -51,8 +51,3 @@ print()
 b.print_alignment()
 
 #draw_a_star_search_space(b)
-incidence_matrix1 = sp1.incidence_matrix()
-incidence_matrix2 = sp2.incidence_matrix()
-print("First matrix rank:", matrix_rank(incidence_matrix1), "\nAnd the number of rows / columns:", len(incidence_matrix1[1]))
-print()
-print("Second matrix rank:", matrix_rank(incidence_matrix2), "\nAnd the number of rows / columns:", len(incidence_matrix2[5]))
