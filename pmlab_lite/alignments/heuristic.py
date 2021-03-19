@@ -76,8 +76,6 @@ class Heuristic():
 				print('The problem does not have an optimal solution.')
 
 
-		solver = pywraplp.Solver.CreateSolver('SCIP') # needs to be reset
-		INF = solver.infinity() # global inf variable
 		C = v.incidence_matrix
 		b = np.array(v.final_mark_vector) - np.array(node.marking_vector)
 		cost_vec = cost_vector()
