@@ -48,6 +48,8 @@ Run the test-file from the top-level-directory using following command:
 ``` sh
 $ python3 -m unittest test.test_*
 ```
+### Certification
+[XES certified](https://www.tf-pm.org/news/pmlab-lite-0-4-5-has-been-xes-certified) by the IEEE Taskforce on Process Mining.
 
 ### License
 GNU General Public License 3.0

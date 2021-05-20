@@ -2,7 +2,6 @@ import unittest
 from pmlab_lite.pn import PetriNet, TraceNet, SynchronousProduct
 from pmlab_lite.alignments import a_star
 from pmlab_lite.helper.viz.dot import draw_petri_net, draw_synchronous_product, draw_a_star_search_space
-from numpy.linalg import lstsq, matrix_rank
 
 #create running example from conformance checking, p. 126
 running_example = PetriNet()

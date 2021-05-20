@@ -156,7 +156,7 @@ class EventLog(EventCollection):
         traces_in_range = self.get_traces()[start:start+num]
 
         for i, trace in enumerate(traces_in_range):
-            print("TRACE_ID:",self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
+            print("TRACE_ID:", self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
             print(" ", attributes[0])
             for event in trace:
                 print(">", event.get_value(attributes[0]))

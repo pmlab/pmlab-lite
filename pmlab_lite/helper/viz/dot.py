@@ -32,7 +32,7 @@ def get_marking(marking: int):
 		return '4'
 
 def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net", format='pdf'):
-	
+
 	"""
 	This function transforms the given Petri net structure
 	into DOT notation and returns it as a digraph object. Call
