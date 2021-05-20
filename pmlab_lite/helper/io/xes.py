@@ -1,9 +1,7 @@
 from pmlab_lite.log import Event, EventLog
-from . import constants as  c
-
-from dateutil.parser import parse #this is slow compared to the following two
+from . import constants as c
 import ciso8601
-from datetime import datetime # datetime.fromisoformat is fast, but only implemented from >=3.7
+# from datetime import datetime # datetime.fromisoformat is fast, but only implemented from >=3.7
 import re
 import gzip
 from lxml import etree
@@ -46,6 +44,7 @@ def import_xes(file):
     f.close()
 
     return log
+
 
 def __check_file_type(file) -> str:
     """

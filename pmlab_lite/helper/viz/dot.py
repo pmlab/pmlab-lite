@@ -3,9 +3,8 @@ from graphviz import Digraph
 from pmlab_lite.discovery.cut import Cut
 from pmlab_lite.discovery.process_tree import ProcessTree
 from pmlab_lite.helper.graph import Graph
-from pmlab_lite.pn import AbstractPetriNet
-from pmlab_lite.pn import PetriNet
-from pmlab_lite.pn import SynchronousProduct
+from pmlab_lite.pn.abstract_pn import AbstractPetriNet
+from pmlab_lite.pn.sp import SynchronousProduct
 import numpy as np
 
 BLANK = '>>'

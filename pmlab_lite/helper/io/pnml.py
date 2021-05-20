@@ -1,4 +1,4 @@
-from pmlab_lite.pn import AbstractPetriNet
+from pmlab_lite.pn.abstract_pn import AbstractPetriNet
 import xml.etree.ElementTree as xmltree
 
 

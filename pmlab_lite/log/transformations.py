@@ -1,5 +1,5 @@
 from pmlab_lite.log import EventLog
-from pmlab_lite.manipulable import *
+from ..manipulable import Filter
 
 
 class EventLogFilters(Filter):

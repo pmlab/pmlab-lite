@@ -1,5 +1,5 @@
-from pmlab_lite.manipulable import Manipulable
-from datetime import datetime
+from ..manipulable.manipulable import Manipulable
+
 
 class Event(dict):
     """An event is the minimum observable unit of information. It actually is a dictionary with, at least, three attributes: 'case_id', 'activity_name' and 'timestamp'."""
@@ -24,13 +24,16 @@ class Event(dict):
 
 
 class EventCollection(Manipulable):
-    """An event collection is an abstract iterable collection of events. This is the smallest collection of events."""
+    """
+    An event collection is an abstract iterable collection of events.
+    This is the smallest collection of events.
+    """
 
     def __iter__(self):
         return self
 
     def __next__(self) -> Event:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class EventLog(EventCollection):
@@ -41,13 +44,13 @@ class EventLog(EventCollection):
     """
 
     def __init__(self):
-        self.events = list() # events are still stored as list of events
-        self.traces = dict() # traces have attributes and store events as under trace['events'] -> list of events
+        self.events = list()  # events are still stored as list of events
+        self.traces = dict()  # traces have attributes and store events as under trace['events'] -> list of events
         self.A = set()
-        self.classifiers = dict() # stores the classifiers, i.e. an identity for events
-        self.globals = dict() # stores the globally defined attributes, i.e attributes every trace/event must contain
-        self.extensions = dict() # stores log extensions
-        self.attributes = dict() # stores log attributes
+        self.classifiers = dict()  # stores the classifiers, i.e. an identity for events
+        self.globals = dict()  # stores the globally defined attributes, i.e attributes every trace/event must contain
+        self.extensions = dict()  # stores log extensions
+        self.attributes = dict()  # stores log attributes
 
     def add_event(self, event: Event, trace_idx: int):
         self.events.append(event)
