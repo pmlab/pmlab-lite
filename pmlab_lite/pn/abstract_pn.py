@@ -2,10 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class AbstractPetriNet(ABC):
-    """This abstract class defines a blueprint for petri net
-    implementations. All concrete classes should implement the
-    given functions.
-    """
+    """Abstract class for petri net object, eg. petri net, trace net."""
 
     def __init__(self):
         self.places = {}

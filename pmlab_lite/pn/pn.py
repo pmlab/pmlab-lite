@@ -4,7 +4,7 @@ import numpy as np
 
 
 class PetriNet(AbstractPetriNet):
-    """ Class to represent a Petri Net."""
+    """Class to represent a Petri Net."""
 
     def add_place(self, place_name: int, capacity: int = 1):
         """
@@ -463,13 +463,13 @@ class PetriNet(AbstractPetriNet):
                 index_places_end.append(key)
         return index_places_end
 
-    def get_init_marking(self):
+    def get_init_marking(self) -> np.ndarray:
         init_mark_vector = np.repeat(0, len(self.places))
         for index in self.get_index_init_places():
             init_mark_vector[index] = 1
         return init_mark_vector
 
-    def get_final_marking(self):
+    def get_final_marking(self) -> np.ndarray:
         final_mark_vector = np.repeat(0, len(self.places))
         for index in self.get_index_final_places():
             final_mark_vector[index] = 1
@@ -478,7 +478,7 @@ class PetriNet(AbstractPetriNet):
     def incidence_matrix(self) -> np.ndarray:
         # Creating an empty matrix
         incidence_matrix = np.zeros((self.num_places(),
-                                    self.num_transitions()), dtype=int)
+                                     self.num_transitions()), dtype=int)
 
         transitions_by_index = self.transitions_by_index()
 
