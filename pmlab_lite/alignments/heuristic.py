@@ -59,6 +59,17 @@ class ILP(AbstractHeuristic):
         self.data = {}
         self.x = {}
 
+        
+        self.data['constraint_coeffs'] = v.incidence_matrix.tolist()
+       
+        self.cost_vec = self.cost_vector()
+        self.data['obj_coeffs'] = self.cost_vec.tolist()
+        
+        self.data['num_vars'] = v.incidence_matrix.shape[1]
+        self.data['num_constraints'] = v.incidence_matrix.shape[0]     
+
+        #self.cost_vec = self.cost_vector()
+
     def heuristic_to_final(self, node) -> float:
         """
         Compute estimated cost to the final marking, by solving the ilp.
@@ -71,13 +82,10 @@ class ILP(AbstractHeuristic):
             float: estimated cost to the final marking
         """
         self.solver = pywraplp.Solver.CreateSolver('SCIP')
-        self.data = {}
         self.x = {}
-        C = v.incidence_matrix
         b = np.array(v.final_mark_vector) - np.array(node.marking_vector)
-        cost_vec = self.cost_vector()
 
-        self.data = self.create_ilp_model(C, b, cost_vec)
+        self.set_bounds(b)
         self.x = self.init_solution()
         self.init_constraints()
         self.init_objective()
@@ -86,31 +94,26 @@ class ILP(AbstractHeuristic):
         return estimated_cost_to_final
 
     def cost_vector(self) -> np.ndarray:
-        num_total_moves = v.synchronous_product.num_transitions()
-        # for each activity in the trace there is a synchronous transition
-        num_async_moves = num_total_moves - len(v.trace)
-        cost_vector = np.append(np.ones(num_async_moves), np.zeros(
-            len(v.trace)))  # cost 1 for async moves / 0 for sync moves
+        """Create the cost vector from the current cost function."""
+        cost_vec = np.zeros(v.synchronous_product.num_transitions())
+        for i in range(len(cost_vec)):
+            t = v.transitions_by_index[i]
+            if t.endswith("synchronous"):
+                a = (t.rsplit('_', 1)[0], t.rsplit('_', 1)[0])
+                cost_vec[i] = v.cost_func(a)
+            elif t.endswith("model"):
+                a = (t.rsplit('_', 1)[0], c.BLANK)
+                cost_vec[i] = v.cost_func(a)
+            elif t.endswith("log"):
+                a = (c.BLANK, t.rsplit('_', 1)[0])
+                cost_vec[i] = v.cost_func(a)
 
-        # make tau transitions in cost_vec cost zero
-        tau_idx = [-idx
-                   - 1 for idx in v.synchronous_product.transitions['tau_model']]
-        cost_vector[tau_idx] = 0.0
+        return cost_vec
 
-        return cost_vector
-
-    def create_ilp_model(self, C: np.ndarray, b: np.ndarray, cost_vec: np.ndarray) -> dict:
-        """Creates and returns a dictionary that stores the data for the problem."""
-        self.data['constraint_coeffs'] = C.tolist()   # the incidence matrix defines the constraint equations of the system
-        # b = mf-m defines the bounds for the constraint equations
+    def set_bounds(self, b: np.ndarray):
+        """Set the bounds for the current ilp to solve, i.e. the right hand side of the marking equation."""
         self.data['bounds'] = b.tolist()
-        # standard cost function: cost of 1 for asynchronous move, 0 for synchronous moves, 1..d asynchronous moves, d+1..N synchronous moves
-        self.data['obj_coeffs'] = cost_vec.tolist()
-        # = num columns = num transitions
-        self.data['num_vars'] = C.shape[1]
-        self.data['num_constraints'] = C.shape[0]     # = num rows = num places
-        return self.data
-
+        
     def init_solution(self):
         """ Initializes the solution variable vector, i.e. each x_i can take values from 0 to inf."""
         for j in range(self.data['num_vars']):

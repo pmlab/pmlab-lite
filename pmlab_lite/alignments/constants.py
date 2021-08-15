@@ -1,6 +1,6 @@
 """Constants that multiple *.py-files in this module need access to."""
 BLANK = '>>'
-EPSILON = 0.001
+EPSILON = 0.000001
 
 
 # constants for printing alignments

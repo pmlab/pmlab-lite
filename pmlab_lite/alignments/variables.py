@@ -16,4 +16,4 @@ synchronous_product = None
 trace = None
 
 # cost function related variables
-cost_function = Callable
+cost_func = Callable 

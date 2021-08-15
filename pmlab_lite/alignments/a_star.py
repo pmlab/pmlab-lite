@@ -36,6 +36,10 @@ class A_Star(Alignment):
         v.synchronous_product = synchronous_product
         v.trace = trace
 
+        self.incidence_matrix = v.incidence_matrix = synchronous_product.incidence_matrix()
+        self.transitions_by_index = v.transitions_by_index = synchronous_product.transitions_by_index()
+        self.final_mark_vector = v.final_mark_vector = synchronous_product.get_final_marking()
+
         if cost_func:
             v.cost_func = cost_func
         else:
@@ -45,10 +49,6 @@ class A_Star(Alignment):
             self.heuristic = ILP()
         elif heuristic == 'rtl':
             self.heuristic = RemainingTraceLength()
-
-        self.incidence_matrix = v.incidence_matrix = synchronous_product.incidence_matrix()
-        self.transitions_by_index = v.transitions_by_index = synchronous_product.transitions_by_index()
-        self.final_mark_vector = v.final_mark_vector = synchronous_product.get_final_marking()
 
         init_node = Node(synchronous_product.get_init_marking(), None, 0)
         init_node.remaining_trace = trace
@@ -99,8 +99,8 @@ class A_Star(Alignment):
                 # update it's remaining trace
                 child_node.remaining_trace = node.remaining_trace[1:]
                 child_node.alignment = node.alignment + \
-                    [(self.transitions_by_index[i][:-12],
-                      self.transitions_by_index[i][:-12])]
+                    [(self.transitions_by_index[i].rsplit('_', 1)[0],
+                      self.transitions_by_index[i].rsplit('_', 1)[0])]
 
             # --Model       move--
             elif self.transitions_by_index[i].endswith("model"):
@@ -108,7 +108,7 @@ class A_Star(Alignment):
                 # update it's remaining trace
                 child_node.remaining_trace = node.remaining_trace[:]
                 child_node.alignment = node.alignment + \
-                    [(self.transitions_by_index[i][:-6], c.BLANK)]
+                    [(self.transitions_by_index[i].rsplit('_', 1)[0], c.BLANK)]
 
             # --Log         move--
             elif self.transitions_by_index[i].endswith("log"):
@@ -116,7 +116,7 @@ class A_Star(Alignment):
                 # update it's remaining trace
                 child_node.remaining_trace = node.remaining_trace[1:]
                 child_node.alignment = node.alignment + \
-                    [(c.BLANK, self.transitions_by_index[i][:-4])]
+                    [(c.BLANK, self.transitions_by_index[i].rsplit('_', 1)[0])]
 
             # update the child nodes costs
             child_node.update_costs(self.heuristic)
