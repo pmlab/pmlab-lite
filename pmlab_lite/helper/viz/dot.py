@@ -129,7 +129,7 @@ def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronou
 	#the edge is going to a transition
 		else:
 			if transitions_by_index[-(e[1]+1)].endswith("_synchronous"):
-				 dot.edge( str(e[0]), str(e[1]), color=color[1] )
+				dot.edge( str(e[0]), str(e[1]), color=color[1] )
 			else:
 				dot.edge( str(e[0]), str(e[1]) )
 
@@ -185,6 +185,75 @@ def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
     render_dot(dot,filename)
     return dot
 
+def draw_alignment_path(input_net: SynchronousProduct, alignment: list, filename="synchronous_product_net", format="pdf"):
+	# does not yet work on traces where a transition is fired twice, i.e. aa, aa, since there is an ambigouity here
+
+	color = ["purple", "yellow1", "chartreuse3", 'black', 'white']
+	transitions_by_index = input_net.transitions_by_index()
+
+	dot = gr.Digraph(name=filename, format=format)
+	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35", ranksep="0.25 equally" )
+
+	#draw places
+	for id, p in input_net.places.items():
+		label = get_marking(input_net.marking[id])
+		if id >= input_net.get_index_init_places()[1]:  # the second index is the trace net input place, and all indexes up from there relate to places from the trace net
+			dot.node(str(p), label=label, xlabel=str(p), shape="circle", group='trace')
+		else:
+			dot.node(str(p), label=label, xlabel=str(p), shape="circle")
+
+	#draw transitions and color the ones that were used in the alignment
+	for i in range(0,len(transitions_by_index)):
+		t = transitions_by_index[i]
+		
+		if t.endswith("_model"):
+			a = (t.rsplit('_', 1)[0], BLANK)
+			if a in alignment:
+				alignment.remove(a)  # remove the alignment step, in order to not account for multiple times
+				if a[0] == 'tau':
+					dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + BLANK + ")",shape="rect", style='filled', color=color[0], fillcolor=color[3], fontcolor=color[4])
+				else:
+					dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + BLANK + ")",shape="rect", style='filled', fillcolor=color[0])
+			else:
+				dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + BLANK + ")",shape="rect", style='unfilled')
+		
+		elif t.endswith("_log"):
+			a = (BLANK, t.rsplit('_', 1)[0])
+			if a in alignment:
+				alignment.remove(a)
+				dot.node( str(-(i+1)), "(" + BLANK + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='filled', fillcolor=color[1], group='trace')
+			else:
+				dot.node( str(-(i+1)), "(" + BLANK + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='unfilled', group='trace')
+		
+		elif t.endswith("_synchronous"):
+			a = (t.rsplit('_', 1)[0], t.rsplit('_', 1)[0])
+			if a in alignment:
+				alignment.remove(a)
+				dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='filled', fillcolor=color[2])
+			else:
+				dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='unfilled')
+
+
+	#draw edges
+	for e in input_net.edges:
+	#the edge is coming from a transition
+		if e[0] < 0:
+			if transitions_by_index[-(e[0]+1)].endswith("_synchronous"):
+				dot.edge( str(e[0]), str(e[1]), color=color[2] )
+			else:
+				dot.edge( str(e[0]), str(e[1]) )
+	#the edge is going to a transition
+		else:
+			if transitions_by_index[-(e[1]+1)].endswith("_synchronous"):
+				dot.edge( str(e[0]), str(e[1]), color=color[2] )
+			else:
+				dot.edge( str(e[0]), str(e[1]) )
+
+	#f = open("./sync_product.dot", "w")
+	#f.write(dot.source)
+
+	render_dot(dot, filename)  # TODO: change to just return the object
+	return dot
 
 def draw_graph(graph: Graph, filename="graph", format="pdf", render=False,
 			   view=True):
