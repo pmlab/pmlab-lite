@@ -30,13 +30,12 @@ class Alignment:
     def _alignment_moves(self):
         for node in self.alignments:
             u = node.alignment
-            self.alignment_moves.append([e for e in u if ('tau' not in e[0])])
+            self.alignment_moves.append([e for e in u])
 
     def _model_moves(self):
         for node in self.alignments:
             u = node.alignment
-            model_move = [e[0] for e in u if ((e[0] != c.BLANK
-                                               and ('tau' not in e[0])))]
+            model_move = [e[0] for e in u if (e[0] != c.BLANK)]
             self.model_moves.append(model_move)
 
     def _log_moves(self):
