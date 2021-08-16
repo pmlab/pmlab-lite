@@ -22,7 +22,6 @@ class RemainingTraceLength(AbstractHeuristic):
     """Heurisitc based on the size of the remaining trace to align."""
 
     def __init__(self):
-        """Do nothing."""
         pass
 
     def heuristic_to_final(self, node) -> float:
@@ -98,15 +97,15 @@ class ILP(AbstractHeuristic):
         cost_vec = np.zeros(v.synchronous_product.num_transitions())
         for i in range(len(cost_vec)):
             t = v.transitions_by_index[i]
+            
             if t.endswith("synchronous"):
                 a = (t.rsplit('_', 1)[0], t.rsplit('_', 1)[0])
-                cost_vec[i] = v.cost_func(a)
             elif t.endswith("model"):
                 a = (t.rsplit('_', 1)[0], c.BLANK)
-                cost_vec[i] = v.cost_func(a)
             elif t.endswith("log"):
                 a = (c.BLANK, t.rsplit('_', 1)[0])
-                cost_vec[i] = v.cost_func(a)
+            
+            cost_vec[i] = v.cost_func(a)
 
         return cost_vec
 

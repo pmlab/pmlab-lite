@@ -3,6 +3,7 @@ from pprint import pprint
 from pmlab_lite.pn import PetriNet, TraceNet, SynchronousProduct
 from pmlab_lite.helper.io import pnml
 from pmlab_lite.alignments.a_star import A_Star
+from pmlab_lite.helper.viz import dot
 import numpy as np
 
 
@@ -38,35 +39,19 @@ trace_net = TraceNet(trace)
 
 sp = SynchronousProduct(running_example, trace_net)
 
-# print(sp.transitions)
-# ts = sp.transitions_by_index()
-# print(ts)
-# print()
-# cost_vec = np.zeros(sp.num_transitions())
-# print(cost_vec)
-# for i in range(len(cost_vec)):
-#     t = ts[i]
-#     if t.endswith("synchronous"):
-#         a = (t.rsplit('_', 1)[0], t.rsplit('_', 1)[0])
-#         print(a, " is a synchronous move: ",  _synchronous_move(a))
-#         cost_vec[i] = test_cost_func(a)
-#     elif t.endswith("model"):
-#         a = (t.rsplit('_', 1)[0], '>>')
-#         print(a, " is a model move: ",  _model_move(a))
-#         cost_vec[i] = test_cost_func(a)
-#     elif t.endswith("log"):
-#         a = ('>>', t.rsplit('_', 1)[0])
-#         print(a, " is a log move: ",  _log_move(a))
-#         cost_vec[i] = test_cost_func(a)
+print(sp.places)
+print(sp.get_index_init_places())
+print()
+print(sp.transitions_as_tuples)
 
-# print()
-# print(cost_vec)
+dot.draw_synchronous_product(sp, "sp_net")
 
-ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
-ilp_searcher1.search()
 
-print('Optimal Alignments found using the ilp heuristic:')
-ilp_searcher1.print_alignments()
+#ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
+#ilp_searcher1.search()
+
+#print('Optimal Alignments found using the ilp heuristic:')
+#ilp_searcher1.print_alignments()
 
 # for i in range(len(ilp_searcher1.alignments)):
 #     print('Alignment 1 cost: ', round(ilp_searcher1.alignments[i].total_cost, 2))

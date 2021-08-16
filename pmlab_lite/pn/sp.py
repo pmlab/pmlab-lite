@@ -1,5 +1,6 @@
 from . pn import PetriNet
 from . tn import TraceNet
+from pmlab_lite.alignments import constants as c
 
 
 class SynchronousProduct(PetriNet):
@@ -15,6 +16,7 @@ class SynchronousProduct(PetriNet):
         self.marking = []
         self.capacity = []
         self.counter = 0  # mapping
+        self.transitions_as_tuples = []
         self.__synchronous_product(petri_net, trace_net)
 
     # TODO clunky -> more easy sync transitions with transitions_by_index()
@@ -60,6 +62,8 @@ class SynchronousProduct(PetriNet):
         # CREATE NEW SYNCHRONOUS PRODUCT TRANSITIONS AND EDGES
         self.__sp_transitions(petri_net, trace_net, place_offset)
 
+        self.__make_tuple_transitions()
+
         return self
 
     def __sp_transitions(self, pn: PetriNet, tn: TraceNet,
@@ -91,3 +95,16 @@ class SynchronousProduct(PetriNet):
                         # outpus
                         for node in pn.get_outputs(pn.transitions[keyT2][0]):
                             self.add_edge(self.transitions[keyT3][i], node)
+
+    def __make_tuple_transitions(self):
+        ts = self.transitions_by_index()
+        for i in range(len(ts)):
+            if ts[i].endswith("synchronous"):
+                a = (ts[i].rsplit('_', 1)[0], ts[i].rsplit('_', 1)[0])
+            elif ts[i].endswith("model"):
+                a = (ts[i].rsplit('_', 1)[0], c.BLANK)
+            elif ts[i].endswith("log"):
+                a = (c.BLANK, ts[i].rsplit('_', 1)[0])
+            
+            self.transitions_as_tuples.append(a)
+                
