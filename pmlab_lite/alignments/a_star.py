@@ -91,6 +91,7 @@ class A_Star(Alignment):
             # i.e. the current marking after transition i was fired
             child_node = Node(
                 self.incidence_matrix[:, i] + node.marking_vector, node, node.number+1)
+            child_node.fired_transitions = node.fired_transitions + [i]
             child_node.find_active_transitions(self.incidence_matrix)
 
             # --Synchronous move--

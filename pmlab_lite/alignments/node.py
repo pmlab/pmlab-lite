@@ -29,6 +29,7 @@ class Node():
         self.alignment = []
         self.remaining_trace = []
         self.active_transitions = []
+        self.fired_transitions = []  # sequence of transitions fired to reach this nodes marking
         self.number = number
 
     def __lt__(self, other):
