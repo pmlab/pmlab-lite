@@ -114,31 +114,16 @@ def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronou
 
 	#draw transitions
 	for key, values in input_net.transitions.items():
-		if key.endswith("_model"):
-			for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
-				if len(values)==1:
-					label = "(" + key.rsplit('_', 1)[0] + "," + BLANK + ")"
-				else:
-					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + BLANK + ")"
-				
+		for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
+			label = __create_sp_label(key, values, i+1)
+			
+			if key.endswith("_model"):
 				dot.node(str(t), label, shape="rect", style='unfilled', color=color[0])
 		
-		elif key.endswith("_log"):
-			for i, t in enumerate(values):
-				if len(values)==1:
-					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + ")"
-				else:
-					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
-				
+			elif key.endswith("_log"):
 				dot.node(str(t), label, shape="rect", style='filled', group='trace')
 		
-		elif key.endswith("_synchronous"):
-			for i, t in enumerate(values):
-				if len(values)==1:
-					label = "(" + key.rsplit('_', 1)[0] + "," + key.rsplit('_', 1)[0] + ")"
-				else:
-					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
-				
+			elif key.endswith("_synchronous"):
 				dot.node(str(t), label, shape="rect", style='filled', fillcolor=color[1])
 
 
@@ -162,6 +147,97 @@ def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronou
 
 	render_dot(dot, filename)  # TODO: change to just return the object
 	return dot
+
+def draw_alignment_path(input_net: SynchronousProduct, node: Node, filename="node_path", format="pdf"):
+	color = ["purple", "yellow1", "chartreuse3", 'black', 'white']
+	transitions_by_index = input_net.transitions_by_index()
+
+	dot = gr.Digraph(name=filename, format=format)
+	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35", ranksep="0.25 equally" )
+
+	#draw places
+	for id, p in input_net.places.items():
+		label = get_marking(input_net.marking[id])
+		if id >= input_net.get_index_init_places()[1]:  # the second index is the trace net input place, and all indexes up from there relate to places from the trace net
+			dot.node(str(p), label=label, xlabel=str(p), shape="circle", group='trace')
+		else:
+			dot.node(str(p), label=label, xlabel=str(p), shape="circle")
+
+	#draw transitions and color the ones that were used in the alignment
+	for key, values in input_net.transitions.items():
+		for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
+			label = __create_sp_label(key, values, i+1)
+			
+			if key.endswith("_model"):
+				if t in node.fired_transitions:
+					if key.startswith('tau'):
+						dot.node( str(t), label, shape="rect", style='filled', color=color[0], fillcolor=color[3], fontcolor=color[4])
+					else:
+						dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[0])
+				else:
+					dot.node( str(t), label, shape="rect", style='unfilled')
+		
+			elif key.endswith("_log"):
+				if t in node.fired_transitions:
+					dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[1], group='trace')
+				else:
+					dot.node( str(t), label, shape="rect", style='unfilled', group='trace')
+		
+			elif key.endswith("_synchronous"):
+				if t in node.fired_transitions:
+					dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[2])
+				else:
+					dot.node( str(t), label, shape="rect", style='unfilled')
+
+	#draw edges
+	for e in input_net.edges:
+	#the edge is coming from a transition
+		if e[0] < 0:
+			if transitions_by_index[-(e[0]+1)].endswith("_synchronous"):
+				dot.edge( str(e[0]), str(e[1]), color=color[2] )
+			else:
+				dot.edge( str(e[0]), str(e[1]) )
+	#the edge is going to a transition
+		else:
+			if transitions_by_index[-(e[1]+1)].endswith("_synchronous"):
+				dot.edge( str(e[0]), str(e[1]), color=color[2] )
+			else:
+				dot.edge( str(e[0]), str(e[1]) )
+
+	#f = open("./sync_product.dot", "w")
+	#f.write(dot.source)
+
+	render_dot(dot, filename)  # TODO: change to just return the object
+	return dot
+
+def __create_sp_label(label: str, transition_ids: list, repitions: int) -> str:
+	
+	if label.endswith("_model"):
+		return __create_model_label_of_sp(label, transition_ids, repitions)
+	
+	elif label.endswith('_log'):
+		return __create_log_label_of_sp(label, transition_ids, repitions)
+	
+	elif label.endswith('_synchronous'):
+		return __create_sync_label_of_sp(label, transition_ids, repitions)
+
+def __create_model_label_of_sp(label: str, transition_ids: list, repitions: int) -> str:
+	if len(transition_ids)==1:
+		return "(" + label.rsplit('_', 1)[0] + "," + BLANK + ")"
+	else:
+		return "(" + label.rsplit('_', 1)[0] + str(repitions) + "," + BLANK + ")"
+
+def __create_log_label_of_sp(label: str, transition_ids: list, repitions: int) -> str:
+	if len(transition_ids)==1:
+		return "(" + BLANK + "," + label.rsplit('_', 1)[0] + ")"
+	else:
+		return "(" + BLANK + "," + label.rsplit('_', 1)[0] + str(repitions) + ")"
+
+def __create_sync_label_of_sp(label: str, transition_ids: list, repitions: int) -> str:
+	if len(transition_ids)==1:
+		return "(" + label.rsplit('_', 1)[0] + "," + label.rsplit('_', 1)[0] + ")"
+	else:
+		return "(" + label.rsplit('_', 1)[0] + str(repitions) + "," + label.rsplit('_', 1)[0] + str(repitions) + ")"
 
 def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
     closed_list = astar.closed_list
@@ -208,85 +284,6 @@ def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
 
     render_dot(dot,filename)
     return dot
-
-def draw_alignment_path(input_net: SynchronousProduct, node: Node, filename="node_path", format="pdf"):
-	color = ["purple", "yellow1", "chartreuse3", 'black', 'white']
-	transitions_by_index = input_net.transitions_by_index()
-
-	dot = gr.Digraph(name=filename, format=format)
-	dot.attr(rankdir='LR', fontsize="10", nodesep="0.35", ranksep="0.25 equally" )
-
-	#draw places
-	for id, p in input_net.places.items():
-		label = get_marking(input_net.marking[id])
-		if id >= input_net.get_index_init_places()[1]:  # the second index is the trace net input place, and all indexes up from there relate to places from the trace net
-			dot.node(str(p), label=label, xlabel=str(p), shape="circle", group='trace')
-		else:
-			dot.node(str(p), label=label, xlabel=str(p), shape="circle")
-
-	#draw transitions and color the ones that were used in the alignment
-	fired_transitions = [-(t+1) for t in node.fired_transitions]
-	for key, values in input_net.transitions.items():
-		if key.endswith("_model"):
-			for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
-				if len(values)==1:
-					label = "(" + key.rsplit('_', 1)[0] + "," + BLANK + ")"
-				else:
-					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + BLANK + ")"
-
-				if t in fired_transitions:
-					if key.startswith('tau'):
-						dot.node( str(t), label, shape="rect", style='filled', color=color[0], fillcolor=color[3], fontcolor=color[4])
-					else:
-						dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[0])
-				else:
-					dot.node( str(t), label, shape="rect", style='unfilled')
-		
-		elif key.endswith("_log"):
-			for i, t in enumerate(values):
-				if len(values)==1:
-					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + ")"
-				else:
-					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
-
-				if t in fired_transitions:
-					dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[1], group='trace')
-				else:
-					dot.node( str(t), label, shape="rect", style='unfilled', group='trace')
-		
-		elif key.endswith("_synchronous"):
-			for i, t in enumerate(values):
-				if len(values)==1:
-					label = "(" + key.rsplit('_', 1)[0] + "," + key.rsplit('_', 1)[0] + ")"
-				else:
-					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
-				
-				if t in fired_transitions:
-					dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[2])
-				else:
-					dot.node( str(t), label, shape="rect", style='unfilled')
-
-
-	#draw edges
-	for e in input_net.edges:
-	#the edge is coming from a transition
-		if e[0] < 0:
-			if transitions_by_index[-(e[0]+1)].endswith("_synchronous"):
-				dot.edge( str(e[0]), str(e[1]), color=color[2] )
-			else:
-				dot.edge( str(e[0]), str(e[1]) )
-	#the edge is going to a transition
-		else:
-			if transitions_by_index[-(e[1]+1)].endswith("_synchronous"):
-				dot.edge( str(e[0]), str(e[1]), color=color[2] )
-			else:
-				dot.edge( str(e[0]), str(e[1]) )
-
-	#f = open("./sync_product.dot", "w")
-	#f.write(dot.source)
-
-	render_dot(dot, filename)  # TODO: change to just return the object
-	return dot
 
 def draw_graph(graph: Graph, filename="graph", format="pdf", render=False,
 			   view=True):
@@ -394,7 +391,6 @@ def draw_process_tree(tree: ProcessTree, name='process_tree', format='png', rend
 		render_dot(dot, name)
 
 	return dot
-
 
 def render_dot(dot: Digraph, name: str, cleanup=True, view=True):
 	"""

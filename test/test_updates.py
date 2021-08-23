@@ -55,9 +55,11 @@ print()
 alignment = ilp_searcher1.alignment_moves[0]
 print(alignment)
 print()
+print(sp.transitions)
+print()
 print(ilp_searcher1.alignments[0].fired_transitions)
 final_node = ilp_searcher1.alignments[0]
 pre_final_node = ilp_searcher1.alignments[0].predecessor.predecessor.predecessor
 print()
 print(pre_final_node.fired_transitions)
-dot.draw_alignment_path(sp, pre_final_node, filename="sp_net")
+dot.draw_alignment_path(sp, final_node, filename="sp_net")
