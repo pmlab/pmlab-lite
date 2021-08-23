@@ -5,6 +5,7 @@ from pmlab_lite.discovery.process_tree import ProcessTree
 from pmlab_lite.helper.graph import Graph
 from pmlab_lite.pn.abstract_pn import AbstractPetriNet
 from pmlab_lite.pn.sp import SynchronousProduct
+from pmlab_lite.alignments.node import Node
 import numpy as np
 
 BLANK = '>>'
@@ -116,23 +117,29 @@ def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronou
 		if key.endswith("_model"):
 			for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
 				if len(values)==1:
-					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + "," + BLANK + ")", shape="rect", style='unfilled', color=color[0])
+					label = "(" + key.rsplit('_', 1)[0] + "," + BLANK + ")"
 				else:
-					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + BLANK + ")", shape="rect", style='unfilled', color=color[0])
+					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + BLANK + ")"
+				
+				dot.node(str(t), label, shape="rect", style='unfilled', color=color[0])
 		
 		elif key.endswith("_log"):
 			for i, t in enumerate(values):
 				if len(values)==1:
-					dot.node(str(t), "(" + BLANK + "," + key.rsplit('_', 1)[0] + ")", shape="rect", style='filled', group='trace')
+					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + ")"
 				else:
-					dot.node(str(t), "(" + BLANK + "," + key.rsplit('_', 1)[0] + str(i+1) + ")", shape="rect", style='filled', group='trace')
+					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
+				
+				dot.node(str(t), label, shape="rect", style='filled', group='trace')
 		
 		elif key.endswith("_synchronous"):
 			for i, t in enumerate(values):
 				if len(values)==1:
-					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + "," + key.rsplit('_', 1)[0] + ")", shape="rect", style='filled', fillcolor=color[1])
+					label = "(" + key.rsplit('_', 1)[0] + "," + key.rsplit('_', 1)[0] + ")"
 				else:
-					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + key.rsplit('_', 1)[0] + str(i+1) + ")", shape="rect", style='filled', fillcolor=color[1])
+					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
+				
+				dot.node(str(t), label, shape="rect", style='filled', fillcolor=color[1])
 
 
 	#draw edges
@@ -202,9 +209,7 @@ def draw_a_star_search_space(astar, filename="search_space", format="pdf"):
     render_dot(dot,filename)
     return dot
 
-def draw_alignment_path(input_net: SynchronousProduct, alignment: list, filename="synchronous_product_net", format="pdf"):
-	# does not yet work on traces where a transition is fired twice, i.e. aa, aa, since there is an ambigouity here
-
+def draw_alignment_path(input_net: SynchronousProduct, node: Node, filename="node_path", format="pdf"):
 	color = ["purple", "yellow1", "chartreuse3", 'black', 'white']
 	transitions_by_index = input_net.transitions_by_index()
 
@@ -220,35 +225,46 @@ def draw_alignment_path(input_net: SynchronousProduct, alignment: list, filename
 			dot.node(str(p), label=label, xlabel=str(p), shape="circle")
 
 	#draw transitions and color the ones that were used in the alignment
-	for i in range(0,len(transitions_by_index)):
-		t = transitions_by_index[i]
-		
-		if t.endswith("_model"):
-			a = (t.rsplit('_', 1)[0], BLANK)
-			if a in alignment:
-				alignment.remove(a)  # remove the alignment step, in order to not account for multiple times
-				if a[0] == 'tau':
-					dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + BLANK + ")",shape="rect", style='filled', color=color[0], fillcolor=color[3], fontcolor=color[4])
+	fired_transitions = [-(t+1) for t in node.fired_transitions]
+	for key, values in input_net.transitions.items():
+		if key.endswith("_model"):
+			for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
+				if len(values)==1:
+					label = "(" + key.rsplit('_', 1)[0] + "," + BLANK + ")"
 				else:
-					dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + BLANK + ")",shape="rect", style='filled', fillcolor=color[0])
-			else:
-				dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + BLANK + ")",shape="rect", style='unfilled')
+					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + BLANK + ")"
+
+				if t in fired_transitions:
+					if key.startswith('tau'):
+						dot.node( str(t), label, shape="rect", style='filled', color=color[0], fillcolor=color[3], fontcolor=color[4])
+					else:
+						dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[0])
+				else:
+					dot.node( str(t), label, shape="rect", style='unfilled')
 		
-		elif t.endswith("_log"):
-			a = (BLANK, t.rsplit('_', 1)[0])
-			if a in alignment:
-				alignment.remove(a)
-				dot.node( str(-(i+1)), "(" + BLANK + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='filled', fillcolor=color[1], group='trace')
-			else:
-				dot.node( str(-(i+1)), "(" + BLANK + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='unfilled', group='trace')
+		elif key.endswith("_log"):
+			for i, t in enumerate(values):
+				if len(values)==1:
+					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + ")"
+				else:
+					label = "(" + BLANK + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
+
+				if t in fired_transitions:
+					dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[1], group='trace')
+				else:
+					dot.node( str(t), label, shape="rect", style='unfilled', group='trace')
 		
-		elif t.endswith("_synchronous"):
-			a = (t.rsplit('_', 1)[0], t.rsplit('_', 1)[0])
-			if a in alignment:
-				alignment.remove(a)
-				dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='filled', fillcolor=color[2])
-			else:
-				dot.node( str(-(i+1)), "(" + t.rsplit('_', 1)[0] + "," + t.rsplit('_', 1)[0] + ")", shape="rect", style='unfilled')
+		elif key.endswith("_synchronous"):
+			for i, t in enumerate(values):
+				if len(values)==1:
+					label = "(" + key.rsplit('_', 1)[0] + "," + key.rsplit('_', 1)[0] + ")"
+				else:
+					label = "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + key.rsplit('_', 1)[0] + str(i+1) + ")"
+				
+				if t in fired_transitions:
+					dot.node( str(t), label, shape="rect", style='filled', fillcolor=color[2])
+				else:
+					dot.node( str(t), label, shape="rect", style='unfilled')
 
 
 	#draw edges

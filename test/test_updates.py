@@ -42,16 +42,22 @@ sp = SynchronousProduct(running_example, trace_net)
 #dot.draw_petri_net(running_example)
 #print(trace_net)
 #dot.draw_petri_net(trace_net)
-print(sp)
-dot.draw_synchronous_product(sp)
+print(sp.transitions)
+#dot.draw_synchronous_product(sp)
+print()
 
-# ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
-# ilp_searcher1.search()
+ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
+ilp_searcher1.search()
 
-# print('Optimal Alignments found using the ilp heuristic:')
-# ilp_searcher1.print_alignments()
-# print()
-# alignment = ilp_searcher1.alignment_moves[0]
-# print(alignment)
-
-# dot.draw_alignment_path(sp, alignment, filename="sp_net")
+print('Optimal Alignments found using the ilp heuristic:')
+ilp_searcher1.print_alignments()
+print()
+alignment = ilp_searcher1.alignment_moves[0]
+print(alignment)
+print()
+print(ilp_searcher1.alignments[0].fired_transitions)
+final_node = ilp_searcher1.alignments[0]
+pre_final_node = ilp_searcher1.alignments[0].predecessor.predecessor.predecessor
+print()
+print(pre_final_node.fired_transitions)
+dot.draw_alignment_path(sp, pre_final_node, filename="sp_net")
