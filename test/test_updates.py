@@ -36,13 +36,14 @@ trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
 #trace = ['As', 'Aa', 'Fa', 'Do', 'Da', 'Af']
 trace_net = TraceNet(trace)
 
+sp = SynchronousProduct(running_example, trace_net)
+
 #print(running_example)
 #dot.draw_petri_net(running_example)
-print(trace_net)
-dot.draw_petri_net(trace_net)
-
-# sp = SynchronousProduct(running_example, trace_net)
-
+#print(trace_net)
+#dot.draw_petri_net(trace_net)
+print(sp)
+dot.draw_synchronous_product(sp)
 
 # ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
 # ilp_searcher1.search()

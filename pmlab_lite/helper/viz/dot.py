@@ -112,13 +112,27 @@ def draw_synchronous_product(input_net: SynchronousProduct, filename="synchronou
 			dot.node(str(p), label=label, xlabel=str(p), shape="circle")
 
 	#draw transitions
-	for i in range(0,len(transitions_by_index)):
-		if transitions_by_index[i].endswith("_model"):
-			dot.node( str(-(i+1)), "(" + transitions_by_index[i].rsplit('_', 1)[0] + "," + BLANK + ")",shape="rect", style='unfilled', color=color[0])
-		elif transitions_by_index[i].endswith("_log"):
-			dot.node( str(-(i+1)), "(" + BLANK + "," + transitions_by_index[i].rsplit('_', 1)[0] + ")", shape="rect", style='filled', group='trace')
-		elif transitions_by_index[i].endswith("_synchronous"):
-			dot.node( str(-(i+1)), "(" + transitions_by_index[i].rsplit('_', 1)[0] + "," + transitions_by_index[i][:-12] + ")", shape="rect", style='filled', fillcolor=color[1])
+	for key, values in input_net.transitions.items():
+		if key.endswith("_model"):
+			for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
+				if len(values)==1:
+					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + "," + BLANK + ")", shape="rect", style='unfilled', color=color[0])
+				else:
+					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + BLANK + ")", shape="rect", style='unfilled', color=color[0])
+		
+		elif key.endswith("_log"):
+			for i, t in enumerate(values):
+				if len(values)==1:
+					dot.node(str(t), "(" + BLANK + "," + key.rsplit('_', 1)[0] + ")", shape="rect", style='filled', group='trace')
+				else:
+					dot.node(str(t), "(" + BLANK + "," + key.rsplit('_', 1)[0] + str(i+1) + ")", shape="rect", style='filled', group='trace')
+		
+		elif key.endswith("_synchronous"):
+			for i, t in enumerate(values):
+				if len(values)==1:
+					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + "," + key.rsplit('_', 1)[0] + ")", shape="rect", style='filled', fillcolor=color[1])
+				else:
+					dot.node(str(t), "(" + key.rsplit('_', 1)[0] + str(i+1) + "," + key.rsplit('_', 1)[0] + str(i+1) + ")", shape="rect", style='filled', fillcolor=color[1])
 
 
 	#draw edges
