@@ -105,6 +105,5 @@ class SynchronousProduct(PetriNet):
                 a = (ts[i].rsplit('_', 1)[0], c.BLANK)
             elif ts[i].endswith("log"):
                 a = (c.BLANK, ts[i].rsplit('_', 1)[0])
-            
+
             self.transitions_as_tuples.append(a)
-                

@@ -54,9 +54,12 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net", format='pd
 			 fontname="Helvetica")
 
 	for key, values in input_net.transitions.items():
-		if key != 'tau' and not key.endswith("_synchronous"):
-			for t in values:
-				dot.node(str(t), key)
+		if key != 'tau' and not key.endswith("_synchronous"): 
+			for i, t in enumerate(values):  # i counts for multiple occurances of the same label, e.g. in a trace net
+				if len(values)==1:
+					dot.node(str(t), key)
+				else:
+					dot.node(str(t), key+str(i+1))
 
 	# draw sync transitions
 	dot.attr('node', shape='box', penwidth="1", fontsize="10",
@@ -70,11 +73,11 @@ def draw_petri_net(input_net: AbstractPetriNet, filename="petri_net", format='pd
 	if 'tau' in input_net.transitions.keys():
 		# draw tau transistions
 		dot.attr('node', shape='square', style="filled",
-				 color='black', penwidth="1", fontsize="5",
-				 fontname="Helvetica")
+				 color='black', penwidth="1", fontsize="10",
+				 fontname="Helvetica", fontcolor='white')
 
 		for t in input_net.transitions['tau']:
-			dot.node(str(t))
+			dot.node(str(t), 'tau')
 
 	# draw place
 	dot.attr('node', shape='circle', penwidth='1', fontsize='10',

@@ -31,21 +31,26 @@ def test_cost_func(transition: tuple) -> float:
 running_example = PetriNet()
 pnml.load(running_example, '../conf_tutorial/running_example.pnml')
 
-#trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
+trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
 #trace = ['As', 'Aa', 'Ao', 'Aaa', 'Af']
-trace = ['As', 'Aa', 'Fa', 'Do', 'Da', 'Af']
+#trace = ['As', 'Aa', 'Fa', 'Do', 'Da', 'Af']
 trace_net = TraceNet(trace)
 
-sp = SynchronousProduct(running_example, trace_net)
+#print(running_example)
+#dot.draw_petri_net(running_example)
+print(trace_net)
+dot.draw_petri_net(trace_net)
+
+# sp = SynchronousProduct(running_example, trace_net)
 
 
-ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
-ilp_searcher1.search()
+# ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
+# ilp_searcher1.search()
 
-print('Optimal Alignments found using the ilp heuristic:')
-ilp_searcher1.print_alignments()
-print()
-alignment = ilp_searcher1.alignment_moves[0]
-print(alignment)
+# print('Optimal Alignments found using the ilp heuristic:')
+# ilp_searcher1.print_alignments()
+# print()
+# alignment = ilp_searcher1.alignment_moves[0]
+# print(alignment)
 
-dot.draw_alignment_path(sp, alignment, filename="sp_net")
+# dot.draw_alignment_path(sp, alignment, filename="sp_net")
