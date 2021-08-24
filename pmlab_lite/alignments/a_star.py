@@ -69,6 +69,7 @@ class A_Star(Alignment):
             if (np.array_equal(current_node.marking_vector,
                                self.final_mark_vector)):
                 self.alignments.append(current_node)
+
                 if len(self.alignments) == self.n_alignments:
                     break
 
@@ -130,19 +131,18 @@ class A_Star(Alignment):
         # deciding on whether or not to add a node to the open list
         # checking whether it is in the closed list
         # ind is a list like [12,34,10]
-        ind = [k for k in range(len(self.closed_list)) if np.array_equal(
-            node.marking_vector, self.closed_list[k].marking_vector)]
-        if len(ind) > 0:
+        
+        idx = [k for k in range(len(self.closed_list)) if node == self.closed_list[k]]
+        if len(idx) > 0:
             pass
 
         # checking whether it is in the open list, update if we found it
         else:
-            ind = [k for k in range(len(self.open_list)) if np.array_equal(
-                node.marking_vector, self.open_list[k][1].marking_vector)]
+            idx = [k for k in range(len(self.open_list)) if node == self.open_list[k][1]]
 
             # at least once in open list
-            if ind:
-                for k in ind:
+            if idx:
+                for k in idx:
                     if (self.open_list[k][1].cost_from_start > node.cost_from_start):
                         self.open_list[k] = [node.total_cost, node]
                     else:
