@@ -28,33 +28,16 @@ def test_cost_func(transition: tuple) -> float:
         return 1.0 + EPSILON
 
 
-# running_example = PetriNet()
-# pnml.load(running_example, '../conf_tutorial/running_example.pnml')
-# trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
-# trace_net = TraceNet(trace)
-# sp = SynchronousProduct(running_example, trace_net)
-# ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
-# ilp_searcher1.search()
-# print('Optimal Alignments found using the ilp heuristic:')
-# ilp_searcher1.print_alignments()
+running_example = PetriNet()
+pnml.load(running_example, '../conf_tutorial/running_example.pnml')
 
-net = PetriNet()
-for i in range(1,5):
-    net.add_place(i)
-transitions = ['A', 'B', 'C', 'D']
-for t in transitions:
-    net.add_transition(t)
-edges = [(1,-1), (1,-2), (-1,2), (-2,2), (2,-3), (-3,3), (3,-4), (-4,4)]
-for e in edges:
-    net.add_edge(e[0], e[1])
-
-trace = ['C']
+trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
 trace_net = TraceNet(trace)
 
-sync_prod = SynchronousProduct(net, trace_net)
+sp = SynchronousProduct(running_example, trace_net)
 
-ilp_searcher = A_Star(sync_prod, trace, heuristic='ilp', n_alignments=2)
-ilp_searcher.search()
+ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=3)
+ilp_searcher1.search()
 print('Optimal Alignments found using the ilp heuristic:')
-ilp_searcher.print_alignments()
-#dot.draw_alignment_path(sync_prod, ilp_searcher.alignments[0])
+ilp_searcher1.print_alignments()
+#dot.draw_synchronous_product(sp)
