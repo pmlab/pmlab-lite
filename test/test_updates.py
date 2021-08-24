@@ -28,38 +28,33 @@ def test_cost_func(transition: tuple) -> float:
         return 1.0 + EPSILON
 
 
-running_example = PetriNet()
-pnml.load(running_example, '../conf_tutorial/running_example.pnml')
+# running_example = PetriNet()
+# pnml.load(running_example, '../conf_tutorial/running_example.pnml')
+# trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
+# trace_net = TraceNet(trace)
+# sp = SynchronousProduct(running_example, trace_net)
+# ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
+# ilp_searcher1.search()
+# print('Optimal Alignments found using the ilp heuristic:')
+# ilp_searcher1.print_alignments()
 
-trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
-#trace = ['As', 'Aa', 'Ao', 'Aaa', 'Af']
-#trace = ['As', 'Aa', 'Fa', 'Do', 'Da', 'Af']
+net = PetriNet()
+for i in range(1,5):
+    net.add_place(i)
+transitions = ['A', 'B', 'C', 'D']
+for t in transitions:
+    net.add_transition(t)
+edges = [(1,-1), (1,-2), (-1,2), (-2,2), (2,-3), (-3,3), (3,-4), (-4,4)]
+for e in edges:
+    net.add_edge(e[0], e[1])
+
+trace = ['C']
 trace_net = TraceNet(trace)
 
-sp = SynchronousProduct(running_example, trace_net)
+sync_prod = SynchronousProduct(net, trace_net)
 
-#print(running_example)
-#dot.draw_petri_net(running_example)
-#print(trace_net)
-#dot.draw_petri_net(trace_net)
-print(sp.transitions)
-#dot.draw_synchronous_product(sp)
-print()
-
-ilp_searcher1 = A_Star(sp, trace, heuristic='ilp', n_alignments=1)
-ilp_searcher1.search()
-
+ilp_searcher = A_Star(sync_prod, trace, heuristic='ilp', n_alignments=2)
+ilp_searcher.search()
 print('Optimal Alignments found using the ilp heuristic:')
-ilp_searcher1.print_alignments()
-print()
-alignment = ilp_searcher1.alignment_moves[0]
-print(alignment)
-print()
-print(sp.transitions)
-print()
-print(ilp_searcher1.alignments[0].fired_transitions)
-final_node = ilp_searcher1.alignments[0]
-pre_final_node = ilp_searcher1.alignments[0].predecessor.predecessor.predecessor
-print()
-print(pre_final_node.fired_transitions)
-dot.draw_alignment_path(sp, final_node, filename="sp_net")
+ilp_searcher.print_alignments()
+#dot.draw_alignment_path(sync_prod, ilp_searcher.alignments[0])
