@@ -32,9 +32,13 @@ class Node():
         self.fired_transitions = []  # sequence of transitions fired to reach this nodes marking
         self.number = number
 
-    def __lt__(self, other):
+    def __lt__(self, other_node):
         """Compare the total cost of this and another node."""
-        return self.total_cost < other.total_cost
+        return self.total_cost < other_node.total_cost
+
+    def __eq__(self, other_node):
+        """Check if marking and fired transitions of two nodes are equal."""
+        return (np.array_equal(self.marking_vector, other_node.marking_vector)) and (self.fired_transitions == other_node.fired_transitions)
 
     def find_active_transitions(self, incidence_matrix):
         """
