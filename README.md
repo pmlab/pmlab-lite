@@ -1,7 +1,9 @@
 # pmlab-lite
 
 [![PyPI version](https://badge.fury.io/py/pmlab-lite.svg)](https://badge.fury.io/py/pmlab-lite)
+[![Certificate: XES](https://img.shields.io/badge/Certificate-XES-brightgreen.svg)](https://www.tf-pm.org/news/pmlab-lite-0-4-5-has-been-xes-certified)
 [![License: MIT](https://img.shields.io/badge/License-GPL-brightgreen.svg)](https://opensource.org/licenses/GPL-3.0)
+
 ---
 A Process Mining scripting environment.
 Containing the following functionality among other:
