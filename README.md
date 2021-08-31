@@ -1,6 +1,8 @@
 # pmlab-lite
----
 
+[![PyPI version](https://badge.fury.io/py/pmlab-lite.svg)](https://badge.fury.io/py/pmlab-lite)
+[![License: MIT](https://img.shields.io/badge/License-GPL-brightgreen.svg)](https://opensource.org/licenses/GPL-3.0)
+---
 A Process Mining scripting environment.
 Containing the following functionality among other:
 * _Petri Net_ modelling, exploring and execution
@@ -11,12 +13,7 @@ Containing the following functionality among other:
 
 
 ### Installation
-pmlab-lite requires graphviz to run the helper functions that draw petri nets to .PDF-files.
 
-So optionally get graphviz through your package manager:
-```sh
-$ sudo apt-get install graphviz               #example for ubuntu/debian systems
-```
 Install pmlab-lite from pypi using pip:
 ```sh
 $ pip3 install pmlab-lite
