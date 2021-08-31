@@ -19,13 +19,13 @@ setuptools.setup(
     url='https://github.com/pmlab/pmlab-lite',
     packages=setuptools.find_packages(),
     license='GPL-3.0',
+    python_requires=">=3.7",
     install_requires=[
             'numpy',
             'graphviz',
             'tqdm',
             'lxml',
             'ortools',
-            'ciso8601',  # can be exchanged for python function since 3.7
         ],
     classifiers=[
             'Development Status :: 2 - Pre-Alpha',
