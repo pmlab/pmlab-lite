@@ -161,7 +161,7 @@ def load(input_net: AbstractPetriNet, filename):
             xml_id = c.attrib['id']
             name = get_name_or_id(c)
 
-            # p = input_net.add_place(place_counter)
+            p = input_net.add_place(place_counter)  # changed this on the ARM machine
             id_map[xml_id] = place_counter
 
         if init_marking is not None:
