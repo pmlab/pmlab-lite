@@ -67,7 +67,7 @@ class Node():
         # self.cost_from_start = 1 * sum([c.EPSILON if
         # ((x[0] != c.BLANK and x[1] != c.BLANK) or ('tau' in x[0]))
         # else 1 for x in self.alignment] )
-        self.cost_from_start = sum([v.cost_func(t) for t in self.alignment])
+        self.cost_from_start = sum([v.cost_func(move) for move in self.alignment])
 
     def ending_cost(self, heuristic):
         """
