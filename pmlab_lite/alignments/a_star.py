@@ -5,13 +5,14 @@ from . heuristic import RemainingTraceLength, ILP
 from . import constants as c, variables as v
 import numpy as np
 import heapq
+from typing import Callable
 
 
 class A_Star(Alignment):
     """Represents an Alignment for which the A*-algortihm can be used."""
 
     def __init__(self, synchronous_product, trace, heuristic: str = 'ilp',
-                 n_alignments: int = 1, cost_func=None):
+                 n_alignments: int = 1, cost_func: Callable = c.default_cost_func):
         """
         Initialize the alignment and it's characteristics.
 
@@ -40,10 +41,7 @@ class A_Star(Alignment):
         self.transitions_by_index = v.transitions_by_index = synchronous_product.transitions_by_index()
         self.final_mark_vector = v.final_mark_vector = synchronous_product.get_final_marking()
 
-        if cost_func:
-            v.cost_func = cost_func
-        else:
-            v.cost_func = c.default_cost_func
+        v.cost_func = cost_func
 
         if heuristic == 'ilp':
             self.heuristic = ILP()
