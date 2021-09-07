@@ -22,10 +22,8 @@ class Alignment:
 
     def _fitness(self):
         for node in self.alignments:
-            u = node.alignment
-            n_aligned = len([e for e in u if (e[0] == e[1] or 'tau' in e[0])])
-            fitness = round(n_aligned / len(u), 3)
-            self.fitness.append(fitness)
+            a = node.alignment
+            self.fitness.append(c._move_log_fitness(a))  # move-log fitness used as default, CHANGE THIS
 
     def _alignment_moves(self):
         for node in self.alignments:
