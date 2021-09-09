@@ -1,9 +1,10 @@
 """This file is used to test changes, new functions, dependencies etc."""
 from pprint import pprint
 from pmlab_lite.pn import PetriNet, TraceNet, SynchronousProduct
-from pmlab_lite.helper.io import pnml
+from pmlab_lite.helper.io import pnml, xes
 #from pmlab_lite.alignments.a_star import A_Star
 from pmlab_lite.helper.viz import dot
+from pmlab_lite.log import EventLog
 import numpy as np
 
 
@@ -43,7 +44,14 @@ def _move_log_fitness(alignment) -> float:
 running_example = PetriNet()
 pnml.load(running_example, '../conf_tutorial/running_example.pnml')
 
-dot.draw_petri_net(running_example)
+log = EventLog()
+log = xes.import_xes('./xes_certification/XES_certification_import_logs/Artificial/LevelA1.xes')
+
+print(log.globals)
+print()
+log.print_traces(0,1)
+
+#dot.draw_petri_net(running_example)
 
 #trace = ['As', 'Aa', 'Sso', 'Ro', 'Ao', 'Aaa', 'Aaa']
 #trace_net = TraceNet(trace)
