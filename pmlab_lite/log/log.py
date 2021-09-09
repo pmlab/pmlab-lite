@@ -139,14 +139,14 @@ class EventLog(EventCollection):
         elif self.__check_standard_globals():        # try to print the most common attributes of events in traces
             self.__print_standard_event_attributes(start, num)
 
-        elif len(self.globals['event'] >= 3):
+        elif len(self.globals['event']) >= 3:
             self.__print_three_attributes(list(self.globals['event'].keys())[:3], start, num)
 
-        elif len(self.globals['event'] == 2):
-            self.__print_three_attributes(list(self.globals['event'].keys())[:2], start, num)
+        elif len(self.globals['event']) == 2:
+            self.__print_two_attributes(list(self.globals['event'].keys())[:2], start, num)
 
-        elif len(self.globals['event'] == 1):
-            self.__print_three_attributes(list(self.globals['event'].keys())[:1], start, num)
+        elif len(self.globals['event']) == 1:
+            self.__print_one_attribute(list(self.globals['event'].keys())[:1], start, num)
 
         else:
             print("The given log does not have any global attributes. Please provide the attributes to print as 'attributes' in the function call.")
