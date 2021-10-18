@@ -2,16 +2,19 @@ from ..manipulable.manipulable import Manipulable
 
 
 class Event(dict):
-    """An event is the minimum observable unit of information. It actually is a dictionary with, at least, three attributes: 'case_id', 'activity_name' and 'timestamp'."""
+    """
+    An event is the minimum observable unit of information. It actually is a dictionary with, at least,
+    three attributes: 'case_id', 'activity_name' and 'timestamp'.
+    """
 
     def __init__(self):
-        return None
+        super().__init__()
 
     def get_activity_name(self):
         return self.get_value("concept:name")
 
     def get_timestamp(self):
-        return self['time:timestamp'] #self.get_value("time:timestamp")
+        return self['time:timestamp']  # self.get_value("time:timestamp")
 
     def get_value(self, attr):
         if attr == 'time:timestamp':
@@ -96,7 +99,8 @@ class EventLog(EventCollection):
 
         Args:
             event (Event): [The Event to compare all the other events of the log to.]
-            classifier (str): [A classifier, i.e. a list of attributes the events must have the same values for, to be considered equal.]
+            classifier (str): [A classifier, i.e. a list of attributes the events must have the same values for,
+                               to be considered equal.]
         """
         equal_events = [event]
         for event2 in self.events:
@@ -106,14 +110,14 @@ class EventLog(EventCollection):
         return equal_events
 
     def __check_standard_globals(self) -> bool:
-        """ Checks if the standatd attributes are present in the global property for events in the log."""
+        """ Checks if the standard attributes are present in the global property for events in the log."""
 
         if {'concept:name', 'time:timestamp', 'lifecycle:transition'} <= set(self.globals['event']):
             return True
         else:
             return False
 
-    def print_traces(self, start: int=0, num: int=1, attributes: list=None):
+    def print_traces(self, start: int = 0, num: int = 1, attributes: list = None):
         """
             Prints specified number of traces from the log given the start index.
             For instance to print 3 traces starting from the 4th trace: log.print_traces(4, 3)
@@ -121,12 +125,13 @@ class EventLog(EventCollection):
             Args:
                 start (int, optional): The index of the start trace to print. Defaults to 0.
                 num (int, optional): The number of the traces to print from start. Defaults to 1.
-
+                attributes (list, optional): A list of attributes to printed for each event in the trace. If None a
+                    default list, will be printed, if the attributes are present in all events of the traces to print
             Raises:
                 Index out of bounds Error: Num > len(log) - 1
         """
 
-        if attributes is not None: # try to print provided attributes
+        if attributes is not None:  # try to print provided attributes
             if len(attributes) > 3:
                 raise ValueError('maximum number of attributes to provide is 3')
             elif len(attributes) == 3:
@@ -149,12 +154,13 @@ class EventLog(EventCollection):
             self.__print_one_attribute(list(self.globals['event'].keys())[:1], start, num)
 
         else:
-            print("The given log does not have any global attributes. Please provide the attributes to print as 'attributes' in the function call.")
+            print('The given log does not have any global attributes. Please provide the attributes to print '
+                  'as \'attributes\' in the function call.')
 
-    def __print_standard_event_attributes(self, start: int=0, num: int=1):
+    def __print_standard_event_attributes(self, start: int = 0, num: int = 1):
         self.__print_three_attributes(['concept:name', 'lifecycle:transition', 'time:timestamp'], start, num)
 
-    def __print_one_attribute(self, attributes, start: int=0, num: int=1):
+    def __print_one_attribute(self, attributes, start: int = 0, num: int = 1):
 
         traces_in_range = self.get_traces()[start:start+num]
 
@@ -165,25 +171,26 @@ class EventLog(EventCollection):
                 print(">", event.get_value(attributes[0]))
             print()
 
-    def __print_two_attributes(self, attributes, start: int=0, num: int=1):
+    def __print_two_attributes(self, attributes, start: int = 0, num: int = 1):
 
         traces_in_range = self.get_traces()[start:start+num]
 
         for i, trace in enumerate(traces_in_range):
-            print("TRACE_ID:",self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
+            print("TRACE_ID:", self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
             print("  {:27}{:36}".format(attributes[0], attributes[1]))
             for event in trace:
                 print("> {:27}{:36}".format(event.get_value(attributes[0]), event.get_value(attributes[1])))
             print()
 
-    def __print_three_attributes(self, attributes, start: int=0, num: int=1):
+    def __print_three_attributes(self, attributes, start: int = 0, num: int = 1):
         traces_in_range = self.get_traces()[start:start+num]
 
         for i, trace in enumerate(traces_in_range):
-            print("TRACE_ID:",self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
+            print("TRACE_ID:", self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
             print("  {:27}{:36}{:15}".format(attributes[0], attributes[1], attributes[2]))
             for event in trace:
-                print("> {:27}{:36}{:15}".format(event.get_value(attributes[0]), event.get_value(attributes[1]), event.get_value(attributes[2])))
+                print("> {:27}{:36}{:15}".format(event.get_value(attributes[0]), event.get_value(attributes[1]),
+                                                 event.get_value(attributes[2])))
         print()
 
     def print(self):
