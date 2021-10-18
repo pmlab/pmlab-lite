@@ -46,5 +46,5 @@ class AbstractPetriNet(ABC):
         pass
 
     @abstractmethod
-    def replay(self):
+    def replay(self, max_length: int):
         pass

@@ -8,12 +8,7 @@ class TraceNet(PetriNet):
     """
 
     def __init__(self, trace: list):
-        self.places = {}
-        self.transitions = {}
-        self.edges = []
-        self.marking = []
-        self.capacity = []
-        self.counter = 0  # mapping
+        super().__init__()
         self.__make_trace_net(trace)
 
     def __make_trace_net(self, trace: list):

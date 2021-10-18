@@ -13,7 +13,7 @@ class PetriNet(AbstractPetriNet):
         marking vector and capacity vector.
 
         Args:
-            name: integer place name
+            place_name: integer place name
             capacity: integer number of token per place
 
         Raises:
@@ -38,7 +38,7 @@ class PetriNet(AbstractPetriNet):
         Remove a place from the net.
 
         Args:
-            name: integer place name
+            place_name: integer place name
         """
         index = 0
         # !!!if name not in places -> index stays 0 and 1st place gets removed
@@ -79,7 +79,7 @@ class PetriNet(AbstractPetriNet):
 
         Args:
             name: string name of transition, key
-            id: negative integer, value of transition at the key(name)
+            transition_id: negative integer, value of transition at the key(name)
         """
 
         self.counter -= 1
@@ -100,17 +100,17 @@ class PetriNet(AbstractPetriNet):
 
         return self
 
-    def remove_transition(self, id: int):
+    def remove_transition(self, transition_value: int):
         """
         Remove the given transition from the net.
 
         Args:
-            id: value of the transition at key=name
+            transition_value: value of the transition at key=name
         """
 
         for key, values in self.transitions.items():
-            if id in values:
-                values.remove(id)
+            if transition_value in values:
+                values.remove(transition_value)
                 if len(values) == 0:
                     self.transitions.pop(key, None)
                 break
@@ -210,7 +210,7 @@ class PetriNet(AbstractPetriNet):
         """
         Returns the reverse of data structure of the transitions,
         i.e. a dict where the id of the transitions are the keys and the
-        values are the transtions names (strings)
+        values are the transitions names (strings)
         """
         transitions_by_index = dict()
 
@@ -225,14 +225,14 @@ class PetriNet(AbstractPetriNet):
         Check whether a transition is able to fire or not.
 
         Args:
-            transition: id of transition
+            transition_id: id of transition
 
-        Retruns:
+        Returns:
             True if transition is enabled, False otherwise.
             Special case: returning true, when a transition has no input places
         """
 
-        # all palces which are predecessor of the given transition
+        # all places which are predecessor of the given transition
         inputs = self.get_inputs(transition_id)
         # do any inputs exist?
         if len(inputs) > 0:
@@ -280,7 +280,7 @@ class PetriNet(AbstractPetriNet):
         Add a new marking to the net.
 
         Args:
-            place: name of place
+            place_name: name of place
             num_token: number of token to add
 
         Raises:
@@ -322,7 +322,7 @@ class PetriNet(AbstractPetriNet):
         """
         seq = []
         enabled_transitions = self.all_enabled_transitions()
-        while (len(enabled_transitions) > 0 and len(seq) < max_length):
+        while len(enabled_transitions) > 0 and len(seq) < max_length:
             t = enabled_transitions[randint(0, len(enabled_transitions) - 1)]
             seq.append(t)
             self.fire_transition(t)
@@ -338,7 +338,7 @@ class PetriNet(AbstractPetriNet):
         Check whether the transition exists in the net or not.
 
         Args:
-            name: id of transition
+            transition_id: id of transition
 
         Returns:
             True if transition exists in petri net, False otherwise.
@@ -355,7 +355,7 @@ class PetriNet(AbstractPetriNet):
         Check whether the place exists in the net or not.
 
         Args:
-            name: name of place
+            place_name: name of place
 
         Returns:
             True if place exists in petri net, False otherwise.
@@ -383,7 +383,7 @@ class PetriNet(AbstractPetriNet):
 
         Args:
             transition_id (int): negative id of transition to fire
-            ignore_exceedings (bool, optional): If true warnings for exceeded
+            ignore_warnings (bool, optional): If true warnings for exceeded
             capacity of places are not shown. Defaults to False.
         """
         if self.is_enabled(transition_id):
@@ -400,8 +400,8 @@ class PetriNet(AbstractPetriNet):
                 # i.e. with one token less
                 marking = self.marking[idx]
                 capacity = self.capacity[idx]
-                if (idx in self.exc_idx and marking == capacity+1):
-                    self.exc_idx.remove(idx)
+                if idx in self.exceeded_places and marking == capacity+1:
+                    self.exceeded_places.remove(idx)
 
                 self.marking[idx] -= 1
 
@@ -415,14 +415,14 @@ class PetriNet(AbstractPetriNet):
                         print('Caution: Capacity (', self.capacity[idx],
                               ') of place', o, 'will be exceeded by',
                               self.marking[idx]-self.capacity[idx]+1)
-                    self.exc_idx.append(idx)
+                    self.exceeded_places.append(idx)
 
                 self.marking[idx] += 1
         else:
             print("Transition is not enabled!")
 
     def get_exceeded_places(self):
-        return [self.places[idx] for idx in self.exc_idx]
+        return [self.places[idx] for idx in self.exceeded_places]
 
     def __repr__(self):
         """
@@ -464,18 +464,24 @@ class PetriNet(AbstractPetriNet):
         return index_places_end
 
     def get_init_marking(self) -> np.ndarray:
+        """Get the initial marking of the petri net."""
+
         init_mark_vector = np.repeat(0, len(self.places))
         for index in self.get_index_init_places():
             init_mark_vector[index] = 1
         return init_mark_vector
 
     def get_final_marking(self) -> np.ndarray:
+        """Get the final marking of the petri net."""
+
         final_mark_vector = np.repeat(0, len(self.places))
         for index in self.get_index_final_places():
             final_mark_vector[index] = 1
         return final_mark_vector
 
     def incidence_matrix(self) -> np.ndarray:
+        """ Create incidence matrix representation of the petri net. """
+
         # Creating an empty matrix
         incidence_matrix = np.zeros((self.num_places(),
                                      self.num_transitions()), dtype=int)
@@ -487,7 +493,7 @@ class PetriNet(AbstractPetriNet):
                 col_index = t
                 row_index = key
 
-                t_val = -(t+1)  # reverse the idx, to be the transtions value
+                t_val = -(t+1)  # reverse the idx, to be the transitions value
                 p = self.places[key]
 
                 # edge goes from T to P

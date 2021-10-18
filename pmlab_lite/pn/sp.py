@@ -5,17 +5,12 @@ from pmlab_lite.alignments import constants as c
 
 class SynchronousProduct(PetriNet):
     """
-    Class to represent a synchronous prodcut.
+    Class to represent a synchronous product.
     For creation the constructor needs to get passed a PetriNet and a TraceNet.
     """
 
     def __init__(self, petri_net: PetriNet, trace_net: TraceNet):
-        self.places = {}
-        self.transitions = {}
-        self.edges = []
-        self.marking = []
-        self.capacity = []
-        self.counter = 0  # mapping
+        super().__init__()
         self.transitions_as_tuples = []
         self.__synchronous_product(petri_net, trace_net)
 
@@ -35,7 +30,7 @@ class SynchronousProduct(PetriNet):
             self.add_place(p + place_offset)
 
         # TRANSITIONS
-        # copying the modelnet
+        # copying the model net
         model_transitions_by_index = petri_net.transitions_by_index()
         for i in range(0, len(model_transitions_by_index)):
             self.add_transition(model_transitions_by_index[i] + "_model")
@@ -75,29 +70,30 @@ class SynchronousProduct(PetriNet):
             for keyT2 in pn.transitions.keys():
                 if keyT1 == keyT2:
                     for i in range(0, len(tn.transitions[keyT1])):
-                        keyT3 = keyT1 + "_synchronous"
-                        self.add_transition(keyT3)
+                        key_t3 = keyT1 + "_synchronous"
+                        self.add_transition(key_t3)
                         # copy all in/outputs from the trace net transitions
                         # onto the new sync prod transitions
 
                         # inputs
                         for node in tn.get_inputs(tn.transitions[keyT1][i]):
-                            self.add_edge(node+off, self.transitions[keyT3][i])
+                            self.add_edge(node+off, self.transitions[key_t3][i])
                         # outputs
                         for node in tn.get_outputs(tn.transitions[keyT1][i]):
-                            self.add_edge(self.transitions[keyT3][i], node+off)
+                            self.add_edge(self.transitions[key_t3][i], node+off)
 
                         # copy all the in/outputs from the model transitions
                         # onto the new sync prod transitions
                         # inputs
                         for node in pn.get_inputs(pn.transitions[keyT2][0]):
-                            self.add_edge(node, self.transitions[keyT3][i])
-                        # outpus
+                            self.add_edge(node, self.transitions[key_t3][i])
+                        # outputs
                         for node in pn.get_outputs(pn.transitions[keyT2][0]):
-                            self.add_edge(self.transitions[keyT3][i], node)
+                            self.add_edge(self.transitions[key_t3][i], node)
 
     def __make_tuple_transitions(self):
         ts = self.transitions_by_index()
+        a = ''
         for i in range(len(ts)):
             if ts[i].endswith("synchronous"):
                 a = (ts[i].rsplit('_', 1)[0], ts[i].rsplit('_', 1)[0])
