@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pmlab_lite',
-    version='0.4.9',
+    version='0.4.9.1',
     author=['Josep Carmona',
             'Matthias Weidlich',
             'Andrea Burattin',
