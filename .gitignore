@@ -14,5 +14,4 @@ build/
 dist/
 pmlab_lite.egg-info/
 .ipynb_checkpoints/
-venv/
 xes_certification/XES_certification_import_logs/Real-life/
