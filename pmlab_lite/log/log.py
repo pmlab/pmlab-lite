@@ -48,24 +48,27 @@ class EventLog(EventCollection):
 
     def __init__(self):
         self.events = list()  # events are still stored as list of events
-        self.traces = dict()  # traces have attributes and store events as under trace['events'] -> list of events
+        # traces have attributes and store events as under trace['events'] -> list of events
+        self.traces = dict()
         self.A = set()
         self.classifiers = dict()  # stores the classifiers, i.e. an identity for events
-        self.globals = dict()  # stores the globally defined attributes, i.e attributes every trace/event must contain
+        # stores the globally defined attributes, i.e attributes every trace/event must contain
+        self.globals = dict()
         self.extensions = dict()  # stores log extensions
         self.attributes = dict()  # stores log attributes
 
     def add_event(self, event: Event, trace_idx: int):
         self.events.append(event)
         self.traces[trace_idx] = self.traces.get(trace_idx, {})
-        self.traces[trace_idx]['events'] = self.traces[trace_idx].get('events', []) + [event]
+        self.traces[trace_idx]['events'] = self.traces[trace_idx].get(
+            'events', []) + [event]
         return self
 
     def add_trace(self, trace_idx: int):
         self.traces[trace_idx] = {}
         return self
 
-    def get_traces(self):
+    def get_traces(self) -> list:
         """ Returns the list of events associated to the traces. """
         traces_only = []
         for key in self.traces:
@@ -133,7 +136,8 @@ class EventLog(EventCollection):
 
         if attributes is not None:  # try to print provided attributes
             if len(attributes) > 3:
-                raise ValueError('maximum number of attributes to provide is 3')
+                raise ValueError(
+                    'maximum number of attributes to provide is 3')
             elif len(attributes) == 3:
                 self.__print_three_attributes(attributes, start, num)
             elif len(attributes) == 2:
@@ -145,27 +149,32 @@ class EventLog(EventCollection):
             self.__print_standard_event_attributes(start, num)
 
         elif len(self.globals['event']) >= 3:
-            self.__print_three_attributes(list(self.globals['event'].keys())[:3], start, num)
+            self.__print_three_attributes(
+                list(self.globals['event'].keys())[:3], start, num)
 
         elif len(self.globals['event']) == 2:
-            self.__print_two_attributes(list(self.globals['event'].keys())[:2], start, num)
+            self.__print_two_attributes(
+                list(self.globals['event'].keys())[:2], start, num)
 
         elif len(self.globals['event']) == 1:
-            self.__print_one_attribute(list(self.globals['event'].keys())[:1], start, num)
+            self.__print_one_attribute(
+                list(self.globals['event'].keys())[:1], start, num)
 
         else:
             print('The given log does not have any global attributes. Please provide the attributes to print '
                   'as \'attributes\' in the function call.')
 
     def __print_standard_event_attributes(self, start: int = 0, num: int = 1):
-        self.__print_three_attributes(['concept:name', 'lifecycle:transition', 'time:timestamp'], start, num)
+        self.__print_three_attributes(
+            ['concept:name', 'lifecycle:transition', 'time:timestamp'], start, num)
 
     def __print_one_attribute(self, attributes, start: int = 0, num: int = 1):
 
         traces_in_range = self.get_traces()[start:start+num]
 
         for i, trace in enumerate(traces_in_range):
-            print("TRACE_ID:", self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
+            print("TRACE_ID:", self.traces[i+start]
+                  ['concept:name'], "(trace number", i+start, ")")
             print(" ", attributes[0])
             for event in trace:
                 print(">", event.get_value(attributes[0]))
@@ -176,18 +185,22 @@ class EventLog(EventCollection):
         traces_in_range = self.get_traces()[start:start+num]
 
         for i, trace in enumerate(traces_in_range):
-            print("TRACE_ID:", self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
+            print("TRACE_ID:", self.traces[i+start]
+                  ['concept:name'], "(trace number", i+start, ")")
             print("  {:27}{:36}".format(attributes[0], attributes[1]))
             for event in trace:
-                print("> {:27}{:36}".format(event.get_value(attributes[0]), event.get_value(attributes[1])))
+                print("> {:27}{:36}".format(event.get_value(
+                    attributes[0]), event.get_value(attributes[1])))
             print()
 
     def __print_three_attributes(self, attributes, start: int = 0, num: int = 1):
         traces_in_range = self.get_traces()[start:start+num]
 
         for i, trace in enumerate(traces_in_range):
-            print("TRACE_ID:", self.traces[i+start]['concept:name'], "(trace number", i+start, ")")
-            print("  {:27}{:36}{:15}".format(attributes[0], attributes[1], attributes[2]))
+            print("TRACE_ID:", self.traces[i+start]
+                  ['concept:name'], "(trace number", i+start, ")")
+            print("  {:27}{:36}{:15}".format(
+                attributes[0], attributes[1], attributes[2]))
             for event in trace:
                 print("> {:27}{:36}{:15}".format(event.get_value(attributes[0]), event.get_value(attributes[1]),
                                                  event.get_value(attributes[2])))
